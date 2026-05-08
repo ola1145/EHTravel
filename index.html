@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AERIA — Glass</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #0b1a2b;
+    --ink-2: #14283f;
+    --ink-3: #2a3f57;
+    --paper: #f5efe4;
+    --paper-2: #ece4d4;
+    --cream: #fbf7ee;
+    --sun: #e36b3a;
+    --sun-deep: #b54a1d;
+    --sky: #5a8fb8;
+    --grass: #2f5d3a;
+    --line: rgba(11,26,43,.14);
+    --line-soft: rgba(11,26,43,.08);
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; color: inherit; }
+  .serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: var(--mono); }
+  .italic { font-style: italic; }
+  .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  ::selection { background: var(--sun); color: var(--cream); }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .rise { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .rise-d1 { animation-delay: .08s; }
+  .rise-d2 { animation-delay: .18s; }
+  .rise-d3 { animation-delay: .28s; }
+  .rise-d4 { animation-delay: .38s; }
+  .rise-d5 { animation-delay: .48s; }
+  @keyframes plane-drift { 0% { transform: translate(-10vw, 8vh) rotate(8deg); } 100% { transform: translate(110vw, -4vh) rotate(8deg); } }
+
+  /* ===== Captivating motion library ===== */
+  @keyframes float-y      { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes float-y-lg   { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-22px) rotate(2deg); } }
+  @keyframes orb-drift-a  { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.1); } 100% { transform: translate(0,0) scale(1); } }
+  @keyframes orb-drift-b  { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,40px) scale(1.15); } 100% { transform: translate(0,0) scale(1); } }
+  @keyframes orb-drift-c  { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,50px) scale(.9); } 100% { transform: translate(0,0) scale(1); } }
+  @keyframes sheen        { 0% { transform: translateX(-120%) skewX(-12deg); } 100% { transform: translateX(220%) skewX(-12deg); } }
+  @keyframes border-glow  { 0%,100% { box-shadow: 0 30px 80px -20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(255,255,255,.08), 0 0 0 0 rgba(227,107,58,0); } 50% { box-shadow: 0 30px 80px -20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.08), 0 0 60px 0 rgba(227,107,58,.18); } }
+  @keyframes pulse-sun    { 0%,100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px -10px rgba(227,107,58,.7), 0 0 0 0 rgba(227,107,58,.6); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px -10px rgba(227,107,58,.7), 0 0 0 12px rgba(227,107,58,0); } }
+  @keyframes aurora       { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  @keyframes blink        { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  @keyframes tick-dot     { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: .6; } }
+  @keyframes spin-slow    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes ticker       { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes char-rise    { from { opacity: 0; transform: translateY(40px) rotateX(-30deg); } to { opacity: 1; transform: none; } }
+  @keyframes scan-line    { 0% { transform: translateY(-100%); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
+  @keyframes ring-pulse   { 0% { transform: scale(.85); opacity: .8; } 100% { transform: scale(1.6); opacity: 0; } }
+  @keyframes typewriter-caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes hover-lift-pulse { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  /* utility classes */
+  .anim-float       { animation: float-y 5s ease-in-out infinite; }
+  .anim-float-lg    { animation: float-y-lg 8s ease-in-out infinite; }
+  .anim-pulse-sun   { animation: pulse-sun 2.4s ease-out infinite; }
+  .anim-glow        { animation: border-glow 5s ease-in-out infinite; }
+  .anim-spin-slow   { animation: spin-slow 60s linear infinite; }
+  .anim-blink       { animation: blink 2s ease-in-out infinite; }
+  .anim-tick        { animation: tick-dot 1.6s ease-in-out infinite; }
+  .anim-aurora      {
+    background: linear-gradient(120deg, rgba(227,107,58,.35), rgba(90,143,184,.35), rgba(106,77,138,.35), rgba(227,107,58,.35));
+    background-size: 300% 300%;
+    animation: aurora 16s ease infinite;
+    filter: blur(60px);
+  }
+
+  /* glass sheen overlay (placed inside a relatively-positioned, overflow:hidden parent) */
+  .glass-sheen {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+    background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,.5) 45%, rgba(255,255,255,.7) 50%, rgba(255,255,255,.5) 55%, transparent 100%);
+    filter: blur(8px); mix-blend-mode: overlay; pointer-events: none;
+    animation: sheen 6s ease-in-out infinite;
+  }
+
+  /* hero ambient orbs */
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; mix-blend-mode: screen; }
+  .orb-a { width: 520px; height: 520px; background: rgba(227,107,58,.45); animation: orb-drift-a 14s ease-in-out infinite; }
+  .orb-b { width: 460px; height: 460px; background: rgba(90,143,184,.45); animation: orb-drift-b 18s ease-in-out infinite; }
+  .orb-c { width: 380px; height: 380px; background: rgba(106,77,138,.4); animation: orb-drift-c 22s ease-in-out infinite; }
+
+  /* button hover lift baseline */
+  .lift { transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease; }
+  .lift:hover { transform: translateY(-2px); }
+
+  /* destination card hover */
+  .dest-card { transition: transform .5s cubic-bezier(.2,.7,.2,1), box-shadow .5s ease; }
+  .dest-card:hover { transform: translateY(-6px) scale(1.015); box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
+
+  /* marquee carousel — right→left */
+  .marquee { overflow: hidden; mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent); }
+  .marquee-track { display: flex; gap: 14px; width: max-content; animation: marquee-scroll 38s linear infinite; }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* shimmer for chips */
+  .chip-shine { position: relative; overflow: hidden; }
+  .chip-shine::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+    transform: translateX(-100%); transition: transform .8s ease;
+  }
+  .chip-shine:hover::before { transform: translateX(100%); }
+
+  /* ring pulse used around live indicator */
+  .ring-pulse-wrap { position: relative; }
+  .ring-pulse-wrap::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 999px;
+    border: 2px solid var(--sun); animation: ring-pulse 1.8s ease-out infinite;
+  }
+
+  /* respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/components.jsx"></script>
+<script type="text/babel" src="src/screen-search-glass.jsx"></script>
+<script type="text/babel" src="src/screen-results.jsx"></script>
+<script type="text/babel" src="src/screen-seats.jsx"></script>
+<script type="text/babel" src="src/screen-passenger.jsx"></script>
+<script type="text/babel" src="src/screen-confirm.jsx"></script>
+<script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>
