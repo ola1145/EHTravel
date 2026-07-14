@@ -59,4 +59,6 @@ npm run ci             # lint + test  (run before every PR)
 
 - The Duffel token lives only in the router env (`$env.DUFFEL_API_TOKEN`) — never in the browser.
 - Cars are mock until a real car-rental provider is wired into `graphql/cars.graphql`.
-- Deploy: front end → AWS Amplify (`amplify.yml`); router → container (`graphql/Dockerfile`).
+- Deploy: **Railway** — `web` (Caddy static, `web.Dockerfile`) + `router` (Apollo Router
+  v2.16.0, `graphql/Dockerfile`). Live: web → https://web-production-11001.up.railway.app,
+  router → https://router-production-7bc2.up.railway.app/graphql. See `docs/DEPLOYMENT.md`.

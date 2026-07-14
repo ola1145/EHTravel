@@ -6,7 +6,8 @@
 #   docker run -p 4000:4000 -e DUFFEL_API_TOKEN=duffel_test_xxx ehtravel-router
 #
 # Prereq: run `npm run compose` first so graphql/supergraph.graphql exists.
-FROM ghcr.io/apollographql/router:v2.0.0
+# v2.16.0 supports Apollo Connectors connect/v0.3 (v2.0.0 does not — "Unknown connect version: 0.3").
+FROM ghcr.io/apollographql/router:v2.16.0
 
 COPY graphql/router.yaml       /dist/config/router.yaml
 COPY graphql/supergraph.graphql /dist/config/supergraph.graphql

@@ -98,8 +98,11 @@ Metacognitive tags in specs: `#PATH_DECISION`, `#PLAN_UNCERTAINTY`, `#EXPORT_CRI
 - SAFe skills: `safe-workflow`, `spec-creation`, `pattern-discovery`, `testing-patterns`,
   `security-audit`, `agent-coordination`, and more (copied to `.claude/skills/`).
 
-## Deploy
+## Deploy — Railway (two services in project `ehtravel`)
 
-- **Front end** → AWS Amplify Hosting (`amplify.yml`, static: `index.html` + `src/**`).
-- **Router** → a container runtime (see `graphql/Dockerfile` + `docs/DEPLOYMENT.md`);
-  set `DUFFEL_API_TOKEN` and the front‑end `GRAPHQL_ENDPOINT` in the host env.
+- **router** → `graphql/Dockerfile` (Apollo Router v2.16.0). Var: `DUFFEL_API_TOKEN`.
+  Live: https://router-production-7bc2.up.railway.app/graphql
+- **web** → `web.Dockerfile` (Caddy static). Var: `GRAPHQL_ENDPOINT` (router URL, injected
+  into the `graphql-endpoint` meta at start). Live: https://web-production-11001.up.railway.app
+- Full runbook: `docs/DEPLOYMENT.md`. Redeploy: `railway up --service <router|web> --detach`.
+  (`amplify.yml` remains as an optional static-only front-end alternative.)

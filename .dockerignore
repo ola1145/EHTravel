@@ -1,0 +1,13 @@
+# Keep Railway build context small — neither image needs these.
+.git
+node_modules
+.env
+.env.local
+src/safe-agentic-workflow
+docs
+specs
+.claude
+.agents
+*.zip
+skills-lock.json
+.DS_Store

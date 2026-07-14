@@ -1,58 +1,70 @@
-# EHTravel — Deployment
+# EHTravel — Deployment (Railway)
 
-Two deployable units: the **static front end** and the **GraphQL router**. The front end
-works standalone (it falls back to client-side mock data), and becomes live the moment it
-can reach a router that has a `DUFFEL_API_TOKEN`.
+Deployed as **two Railway services in one project** (`ehtravel`):
+
+| Service | What | Public URL |
+|---------|------|-----------|
+| `router` | Apollo Router over Duffel (`graphql/Dockerfile`) | https://router-production-7bc2.up.railway.app/graphql |
+| `web` | Static AERIA front end via Caddy (`web.Dockerfile`) | https://web-production-11001.up.railway.app |
 
 ```
-┌────────────────────┐        GraphQL         ┌──────────────────────┐   @connect   ┌────────────┐
-│  Front end (static)│ ─────────────────────► │  Apollo Router       │ ───────────► │  Duffel    │
-│  Amplify Hosting   │  GRAPHQL_ENDPOINT      │  (container)         │  Bearer token │  api.duffel│
-└────────────────────┘                        └──────────────────────┘              └────────────┘
+web (Caddy, static) ──GraphQL──► router (Apollo Router) ──@connect──► Duffel REST API
+ GRAPHQL_ENDPOINT env             DUFFEL_API_TOKEN env      Bearer token (server-side only)
 ```
 
-## 1. Front end → AWS Amplify Hosting
+## How it's wired
 
-Already configured in `amplify.yml` (static: `index.html`, `src/**`, `ui-tokens.json`).
-Amplify auto-builds on push to `main`.
+- **router** — builds `graphql/Dockerfile` (Apollo Router **v2.16.0**, which supports
+  Connectors `connect/v0.3`; v2.0.0 does not). Listens on Railway's `$PORT`
+  (`router.yaml`: `listen: 0.0.0.0:${env.PORT:-4000}`). CORS is `allow_any_origin`
+  (public gateway, no cookies). Requires the `DUFFEL_API_TOKEN` variable.
+- **web** — builds `web.Dockerfile` (Caddy). `web-entrypoint.sh` rewrites the
+  `graphql-endpoint` meta in `index.html` from the `GRAPHQL_ENDPOINT` variable at start,
+  then serves on `$PORT`.
+- Each service selects its Dockerfile via the `RAILWAY_DOCKERFILE_PATH` variable.
 
-**Point the browser at your router:** the app reads the endpoint from
-`<meta name="graphql-endpoint">` in `index.html` (or `window.GRAPHQL_ENDPOINT`). For
-production, set it to your deployed router URL. Until then the app runs in graceful
-**mock mode** — fully browsable, no live Duffel calls.
-
-## 2. Router → container
+## Reproduce / redeploy from scratch
 
 ```bash
-cp .env.example .env            # set DUFFEL_API_TOKEN
-npm run compose                 # graphql/supergraph.yaml → graphql/supergraph.graphql
-docker build -f graphql/Dockerfile -t ehtravel-router .
-docker run -p 4000:4000 -e DUFFEL_API_TOKEN="$DUFFEL_API_TOKEN" ehtravel-router
+railway init --name ehtravel
+
+# --- router ---
+railway add --service router
+printf '%s' "$DUFFEL_API_TOKEN" | railway variable --set-from-stdin DUFFEL_API_TOKEN --service router
+railway variable --set "RAILWAY_DOCKERFILE_PATH=graphql/Dockerfile" --service router
+npm run compose                       # regenerate graphql/supergraph.graphql (committed; Dockerfile COPYs it)
+railway up --service router --detach
+railway domain --service router       # generate a public URL
+
+# --- web ---  (use the router URL from the previous step)
+railway add --service web
+railway variable --set "RAILWAY_DOCKERFILE_PATH=web.Dockerfile" --service web
+railway variable --set "GRAPHQL_ENDPOINT=https://<router-domain>/graphql" --service web
+railway up --service web --detach
+railway domain --service web
 ```
 
-Deploy that image to any container host (Fly.io, Cloud Run, ECS/Fargate, Render, Railway).
-Set two things in the host:
-- `DUFFEL_API_TOKEN` (secret) on the router service.
-- The front-end `graphql-endpoint` meta → the router's public URL, and add that origin to
-  `cors.origins` in `graphql/router.yaml`.
+Redeploy after changes: `railway up --service <router|web> --detach`. Watch:
+`railway logs --service <svc> --lines 100`. Status: `railway deployment list --service <svc> --json`.
 
-## Local dev (no Docker)
+## Updating the supergraph
+
+Change `graphql/duffel.graphql` (or `cars.graphql`) → `npm run compose` (regenerates
+`graphql/supergraph.graphql`, which the router image bakes in) → `railway up --service router --detach`.
+
+## Local dev (no cloud)
 
 ```bash
-bash scripts/install-mcp.sh     # installs rover + apollo-mcp-server (one time)
-export DUFFEL_API_TOKEN=duffel_test_xxx
-npm run router                  # rover dev — composes + serves the router on :4000
-npm run dev                     # static front end on :3000
+bash scripts/install-mcp.sh           # rover + apollo-mcp-server (once)
+cp .env.example .env                  # set DUFFEL_API_TOKEN
+npm run router                        # rover dev on :4000
+npm run dev                           # static front end on :3000
 ```
 
-## CI
+## Notes
 
-`npm run ci` (lint + supergraph composition + wiring checks) must pass before a PR.
-Composition accepts the Elastic License v2 (`APOLLO_ELV2_LICENSE=accept`), required by
-Apollo Federation.
-
-## ⚠️ Cars
-
-Cars are a **mock subgraph** — Duffel has no car-rental API. The GraphQL contract and UI are
-provider-ready; wire a real aggregator by replacing the `cars_mock` `@source` in
-`graphql/cars.graphql`. Until then, car results come from the client-side fallback.
+- **Secrets**: `DUFFEL_API_TOKEN` lives only in the router's Railway variables; the browser
+  never sees it. Set it via stdin (`--set-from-stdin`) so it never lands in shell history.
+- **Cars** remain a mock subgraph (Duffel has no car API) — see `graphql/cars.graphql`.
+- **Amplify** (`amplify.yml`) is retained as an optional static-only front-end alternative,
+  but the supported path is Railway (both services).
