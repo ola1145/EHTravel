@@ -1,0 +1,399 @@
+# Note to AI Friends: This is an Apollo Connectors schema. You should use your connectors-spec MCP tool if you have it available before editing this file.
+#
+# EHTravel — Duffel subgraph. Orchestrates the Duffel REST API (flights + stays) into
+# the federated GraphQL supergraph. The Duffel access token is injected from the router
+# process environment ($env.DUFFEL_API_TOKEN); it is NEVER exposed to the browser.
+#
+#   Flights:  POST /air/offer_requests?return_offers=true  →  GET /air/offers/{id}  →  POST /air/orders
+#   Stays:    POST /stays/search  →  POST /stays/quotes  →  POST /stays/bookings
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.12")
+  @link(url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"])
+
+@source(
+  name: "duffel"
+  http: {
+    baseURL: "https://api.duffel.com"
+    headers: [
+      { name: "Authorization", value: "Bearer {$env.DUFFEL_API_TOKEN}" }
+      { name: "Duffel-Version", value: "v2" }
+      { name: "Accept", value: "application/json" }
+      { name: "Content-Type", value: "application/json" }
+    ]
+  }
+)
+
+# =============================================================================
+# Queries
+# =============================================================================
+
+type Query {
+  # ---- Flights -------------------------------------------------------------
+  """Search for flight offers. Creates a Duffel offer request and returns the offers."""
+  searchFlights(input: FlightSearchInput!): [FlightOffer!]!
+    @connect(
+      source: "duffel"
+      http: {
+        POST: "/air/offer_requests"
+        queryParams: "return_offers: $(true)"
+        body: """
+        $({
+          data: {
+            slices: $args.input.slices->map({
+              origin: @.origin,
+              destination: @.destination,
+              departure_date: @.departureDate
+            }),
+            passengers: $args.input.passengers,
+            cabin_class: $args.input.cabinClass
+          }
+        })
+        """
+      }
+      selection: """
+      $.data.offers {
+        id
+        totalAmount: total_amount
+        totalCurrency: total_currency
+        taxAmount: tax_amount
+        owner: owner {
+          name
+          iataCode: iata_code
+          logoUrl: logo_symbol_url
+        }
+        slices: slices {
+          duration
+          origin: origin { iataCode: iata_code cityName: city_name name }
+          destination: destination { iataCode: iata_code cityName: city_name name }
+          segments: segments {
+            departingAt: departing_at
+            arrivingAt: arriving_at
+            duration
+            operatingCarrier: operating_carrier { name iataCode: iata_code }
+            aircraft: aircraft { name }
+            origin: origin { iataCode: iata_code }
+            destination: destination { iataCode: iata_code }
+          }
+        }
+      }
+      """
+    )
+
+  """Fetch a single flight offer by id (refreshes price / availability)."""
+  flightOffer(id: ID!): FlightOffer
+    @connect(
+      source: "duffel"
+      http: { GET: "/air/offers/{$args.id}" }
+      selection: """
+      $.data {
+        id
+        totalAmount: total_amount
+        totalCurrency: total_currency
+        taxAmount: tax_amount
+        owner: owner { name iataCode: iata_code logoUrl: logo_symbol_url }
+        slices: slices {
+          duration
+          origin: origin { iataCode: iata_code cityName: city_name name }
+          destination: destination { iataCode: iata_code cityName: city_name name }
+          segments: segments {
+            departingAt: departing_at
+            arrivingAt: arriving_at
+            duration
+            operatingCarrier: operating_carrier { name iataCode: iata_code }
+            aircraft: aircraft { name }
+            origin: origin { iataCode: iata_code }
+            destination: destination { iataCode: iata_code }
+          }
+        }
+      }
+      """
+    )
+
+  # ---- Stays / Hotels ------------------------------------------------------
+  """Search for accommodation (hotels). Returns a list of search results with the cheapest rate."""
+  searchStays(input: StaySearchInput!): [StayResult!]!
+    @connect(
+      source: "duffel"
+      http: {
+        POST: "/stays/search"
+        body: """
+        $({
+          data: {
+            check_in_date: $args.input.checkInDate,
+            check_out_date: $args.input.checkOutDate,
+            rooms: $args.input.rooms,
+            guests: $args.input.guests,
+            location: {
+              radius: $args.input.location.radius,
+              geographic_coordinates: {
+                latitude: $args.input.location.latitude,
+                longitude: $args.input.location.longitude
+              }
+            }
+          }
+        })
+        """
+      }
+      selection: """
+      $.data.results {
+        id
+        cheapestRateTotalAmount: cheapest_rate_total_amount
+        cheapestRateCurrency: cheapest_rate_currency
+        accommodation: accommodation {
+          id
+          name
+          rating
+          reviewScore: review_score
+          photos: photos { url }
+          location: location {
+            address: address {
+              lineOne: line_one
+              city: city_name
+              countryCode: country_code
+              postalCode: postal_code
+            }
+          }
+        }
+      }
+      """
+    )
+}
+
+# =============================================================================
+# Mutations
+# =============================================================================
+
+type Mutation {
+  """Create a flight booking (order) for a selected offer. Requires a live Duffel token."""
+  createFlightOrder(input: FlightOrderInput!): FlightOrder
+    @connect(
+      source: "duffel"
+      http: {
+        POST: "/air/orders"
+        body: """
+        $({
+          data: {
+            type: $("instant"),
+            selected_offers: [$args.input.offerId],
+            passengers: $args.input.passengers,
+            payments: [{
+              type: $("balance"),
+              amount: $args.input.amount,
+              currency: $args.input.currency
+            }]
+          }
+        })
+        """
+      }
+      selection: """
+      $.data {
+        id
+        bookingReference: booking_reference
+        totalAmount: total_amount
+        totalCurrency: total_currency
+        createdAt: created_at
+      }
+      """
+    )
+
+  """Create a hotel booking from a previously created quote."""
+  createStayBooking(input: StayBookingInput!): StayBooking
+    @connect(
+      source: "duffel"
+      http: {
+        POST: "/stays/bookings"
+        body: """
+        $({
+          data: {
+            quote_id: $args.input.quoteId,
+            email: $args.input.email,
+            phone_number: $args.input.phoneNumber,
+            guests: $args.input.guests,
+            accommodation_special_requests: $args.input.specialRequests
+          }
+        })
+        """
+      }
+      selection: """
+      $.data {
+        id
+        reference: booking_reference
+        status
+        totalAmount: total_amount
+        totalCurrency: total_currency
+      }
+      """
+    )
+}
+
+# =============================================================================
+# Types
+# =============================================================================
+
+type FlightOffer {
+  id: ID!
+  totalAmount: String
+  totalCurrency: String
+  taxAmount: String
+  owner: Airline
+  slices: [FlightSlice!]
+}
+
+type Airline {
+  name: String
+  iataCode: String
+  logoUrl: String
+}
+
+type FlightSlice {
+  duration: String
+  origin: Place
+  destination: Place
+  segments: [FlightSegment!]
+}
+
+type FlightSegment {
+  departingAt: String
+  arrivingAt: String
+  duration: String
+  operatingCarrier: Airline
+  aircraft: Aircraft
+  origin: Place
+  destination: Place
+}
+
+type Aircraft {
+  name: String
+}
+
+type Place {
+  iataCode: String
+  cityName: String
+  name: String
+}
+
+type FlightOrder {
+  id: ID!
+  bookingReference: String
+  totalAmount: String
+  totalCurrency: String
+  createdAt: String
+}
+
+type StayResult {
+  id: ID!
+  cheapestRateTotalAmount: String
+  cheapestRateCurrency: String
+  accommodation: Accommodation
+}
+
+type Accommodation {
+  id: ID
+  name: String
+  rating: Int
+  reviewScore: Float
+  photos: [Photo!]
+  location: StayLocation
+}
+
+type Photo {
+  url: String
+}
+
+type StayLocation {
+  address: Address
+}
+
+type Address {
+  lineOne: String
+  city: String
+  countryCode: String
+  postalCode: String
+}
+
+type StayBooking {
+  id: ID!
+  reference: String
+  status: String
+  totalAmount: String
+  totalCurrency: String
+}
+
+# =============================================================================
+# Inputs
+# =============================================================================
+
+input FlightSearchInput {
+  "One slice for one-way, two for round trip."
+  slices: [FlightSliceInput!]!
+  passengers: [FlightPassengerInput!]!
+  "first | business | premium_economy | economy"
+  cabinClass: String
+}
+
+input FlightSliceInput {
+  origin: String!
+  destination: String!
+  "ISO 8601 date, e.g. 2026-06-12"
+  departureDate: String!
+}
+
+input FlightPassengerInput {
+  "adult | child | infant_without_seat"
+  type: String
+}
+
+input FlightOrderInput {
+  offerId: ID!
+  passengers: [OrderPassengerInput!]!
+  amount: String!
+  currency: String!
+}
+
+input OrderPassengerInput {
+  id: ID!
+  givenName: String!
+  familyName: String!
+  bornOn: String
+  email: String
+  phoneNumber: String
+  title: String
+  gender: String
+}
+
+input StaySearchInput {
+  "ISO 8601 date"
+  checkInDate: String!
+  "ISO 8601 date"
+  checkOutDate: String!
+  rooms: Int!
+  guests: [StayGuestInput!]!
+  location: StayLocationInput!
+}
+
+input StayGuestInput {
+  "adult | child"
+  type: String!
+}
+
+input StayLocationInput {
+  latitude: Float!
+  longitude: Float!
+  "Search radius in kilometres"
+  radius: Int!
+}
+
+input StayBookingInput {
+  quoteId: ID!
+  email: String!
+  phoneNumber: String!
+  guests: [StayBookingGuestInput!]!
+  specialRequests: String
+}
+
+input StayBookingGuestInput {
+  givenName: String!
+  familyName: String!
+  bornOn: String
+}

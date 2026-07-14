@@ -10,5 +10,6 @@ frontend:
     files:
       - 'index.html'
       - 'src/**/*'
+      - 'ui-tokens.json'
   cache:
     paths: []

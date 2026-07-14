@@ -1,0 +1,14 @@
+# rover supergraph compose --config graphql/supergraph.yaml > graphql/supergraph.graphql
+# Federated supergraph for EHTravel: Duffel (flights + stays) + Cars (mock).
+federation_version: =2.12.0
+subgraphs:
+  duffel:
+    # routing_url is required by the composer but ignored for connector subgraphs —
+    # the @source directive in duffel.graphql defines the real HTTP routing.
+    routing_url: https://api.duffel.com
+    schema:
+      file: ./duffel.graphql
+  cars:
+    routing_url: https://cars-provider.example.invalid
+    schema:
+      file: ./cars.graphql

@@ -25,16 +25,18 @@ function App() {
   });
   const [payment, setPayment] = useState({ number: "", name: "", exp: "", cvv: "", zip: "" });
 
-  // Generate flights on demand
+  // Resolve flights via the federated GraphQL supergraph (Duffel through Apollo Router).
+  // EHT_API.searchFlights returns live Duffel offers mapped to the UI's flight shape, and
+  // transparently falls back to the local generator when the router/token is unavailable —
+  // so behaviour and visuals are unchanged whether or not the backend is live.
   function runSearch() {
     setSearching(true);
     setSelectedFlight(null);
-    const list = makeFlights(query.origin.code, query.dest.code, query.departLabel);
-    setFlights(list);
-    setTimeout(() => {
-      setSearching(false);
-      setStage("results");
-    }, 1100);
+    const minVeil = new Promise((r) => setTimeout(r, 900)); // preserve the search animation
+    Promise.all([window.EHT_API.searchFlights(query), minVeil])
+      .then(([list]) => setFlights(list && list.length ? list : makeFlights(query.origin.code, query.dest.code, query.departLabel)))
+      .catch(() => setFlights(makeFlights(query.origin.code, query.dest.code, query.departLabel)))
+      .finally(() => { setSearching(false); setStage("results"); });
   }
 
   function reset() {

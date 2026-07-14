@@ -1,0 +1,80 @@
+# Note to AI Friends: This is an Apollo Connectors schema.
+#
+# EHTravel — Cars subgraph  ⚠️ MOCK / PLACEHOLDER.
+# Duffel has NO car-rental product (their API covers only Flights + Stays), so this subgraph
+# defines the *contract* the UI depends on but points at a placeholder source. The composed
+# supergraph is valid; at runtime the browser falls back to EHT_API's client-side mock for
+# cars (see src/api.jsx). To go live, replace `cars_mock` below with a real car-rental
+# aggregator (e.g. a CarTrawler / Amadeus Cars / Priceline partner API) and update the
+# selection mappings to that provider's response shape.
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.12")
+  @link(url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"])
+
+@source(
+  name: "cars_mock"
+  http: {
+    # Replace with a real car-rental provider base URL + auth headers.
+    baseURL: "https://cars-provider.example.invalid"
+    headers: [{ name: "Accept", value: "application/json" }]
+  }
+)
+
+type Query {
+  """Search rental cars. MOCK — see file header; the browser uses a client-side fallback."""
+  searchCars(input: CarSearchInput!): [CarResult!]!
+    @connect(
+      source: "cars_mock"
+      http: {
+        GET: "/v1/search"
+        queryParams: """
+        pickup: $args.input.pickupLocation
+        dropoff: $args.input.dropoffLocation
+        pickup_date: $args.input.pickupDate
+        dropoff_date: $args.input.dropoffDate
+        """
+      }
+      selection: """
+      $.results {
+        id
+        vendor: vendor.name
+        vehicleClass: vehicle.class
+        vehicleName: vehicle.name
+        transmission: vehicle.transmission
+        seats: vehicle.seats
+        bags: vehicle.bags
+        imageUrl: vehicle.image_url
+        totalAmount: price.total
+        currency: price.currency
+        pickupLocation: pickup.name
+        dropoffLocation: dropoff.name
+      }
+      """
+    )
+}
+
+type CarResult {
+  id: ID!
+  vendor: String
+  vehicleClass: String
+  vehicleName: String
+  transmission: String
+  seats: Int
+  bags: Int
+  imageUrl: String
+  totalAmount: String
+  currency: String
+  pickupLocation: String
+  dropoffLocation: String
+}
+
+input CarSearchInput {
+  pickupLocation: String!
+  dropoffLocation: String!
+  "ISO 8601 date-time"
+  pickupDate: String!
+  "ISO 8601 date-time"
+  dropoffDate: String!
+  driverAge: Int
+}

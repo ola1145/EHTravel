@@ -5,6 +5,7 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
   const [destOpen, setDestOpen] = useState(false);
   const [parallaxX, setParallaxX] = useState(0);
   const [parallaxY, setParallaxY] = useState(0);
+  const [mode, setMode] = useState("flights"); // flights | hotels | cars
   const heroRef = useRef(null);
 
   // gentle parallax on the hero image based on cursor position
@@ -144,6 +145,35 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
           }} />
           {/* moving sheen */}
           <div className="glass-sheen" aria-hidden />
+
+          {/* Product mode switcher — Flights / Hotels / Cars (additive) */}
+          <div style={{ display: "flex", gap: 6, padding: "6px 8px 10px" }}>
+            {[
+              { key: "flights", label: "Flights", accent: "var(--sun)", icon: <Icon.plane size={15} /> },
+              { key: "hotels",  label: "Hotels",  accent: "var(--sky)",  icon: (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18V7a1 1 0 011-1h9a4 4 0 014 4v8"/><path d="M3 12h14"/><path d="M21 18v-3a2 2 0 00-2-2"/><path d="M7 10h.01"/><path d="M2 18h20"/></svg>
+              ) },
+              { key: "cars",    label: "Cars",    accent: "var(--grass)", icon: (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l1.5-4.5A2 2 0 018.4 7h7.2a2 2 0 011.9 1.5L19 13"/><path d="M4 13h16v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"/><path d="M7 16h.01M17 16h.01"/></svg>
+              ) },
+            ].map((m) => {
+              const on = mode === m.key;
+              return (
+                <button key={m.key} onClick={() => setMode(m.key)} className="lift" style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: on ? "rgba(255,255,255,.94)" : "rgba(255,255,255,.06)",
+                  color: on ? "var(--ink)" : "var(--cream)",
+                  border: on ? "1px solid rgba(255,255,255,.5)" : "1px solid rgba(255,255,255,.22)",
+                  padding: "9px 18px", borderRadius: 999, fontSize: 13, fontWeight: 500, letterSpacing: ".04em",
+                  backdropFilter: "blur(10px)", position: "relative" }}>
+                  <span style={{ color: on ? m.accent : "currentColor" }}>{m.icon}</span>{m.label}
+                  {on && <span style={{ width: 6, height: 6, borderRadius: 999, background: m.accent, marginLeft: 2 }} />}
+                </button>
+              );
+            })}
+          </div>
+
+          {mode === "flights" && (<>
           {/* Trip type tabs */}
           <div style={{ display: "flex", gap: 4, padding: "4px 8px 12px" }}>
             {["Round trip", "One way", "Multi-city"].map((t, i) => (
@@ -230,6 +260,10 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
               }}>{c}</button>
             ))}
           </div>
+          </>)}
+
+          {mode === "hotels" && <div style={{ padding: "2px 4px 6px" }}><HotelSearchPanel /></div>}
+          {mode === "cars"   && <div style={{ padding: "2px 4px 6px" }}><CarSearchPanel /></div>}
         </div>
 
         {/* Bottom row: featured destinations */}
