@@ -10,14 +10,18 @@ health_check:
   path: /health
 
 # Allow the static front end (npm run dev on :3000) to call the router from the browser.
+# Apollo Router v2 uses the policy-based CORS structure.
 cors:
-  origins:
-    - http://localhost:3000
-    - http://localhost:8080
-    - https://ehtravel.org
-  allow_credentials: false
-  allow_headers:
-    - content-type
+  max_age: 24h
+  policies:
+    - origins:
+        - http://localhost:3000
+        - http://localhost:8080
+        - https://ehtravel.org
+        - https://studio.apollographql.com
+      allow_credentials: false
+      allow_headers:
+        - content-type
 
 # Surface connector HTTP errors during development.
 include_subgraph_errors:
