@@ -41,6 +41,8 @@ limits:
       http_max_response_size: 5MiB
 
 connectors:
+  # Never expose connector request/response details (which may contain provider data) to clients.
+  debug_extensions: false
   max_requests_per_operation_per_source: 10
   sources:
     assistant.assistant:

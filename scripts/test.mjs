@@ -61,6 +61,8 @@ const duffelSchema = readFileSync(join(root, "graphql/duffel.graphql"), "utf8");
 const routerConfig = readFileSync(join(root, "graphql/router.yaml"), "utf8");
 !routerConfig.includes("allow_any_origin: true") && !routerConfig.includes("- \"*\"")
   ? ok("router uses explicit CORS origins") : bad("router has wildcard CORS");
+routerConfig.includes("debug_extensions: false")
+  ? ok("router disables connector debug extensions") : bad("router connector debug extensions are not disabled");
 
 console.log(fail ? `\nTESTS FAILED (${fail})` : "\nTESTS OK");
 process.exit(fail ? 1 : 0);
