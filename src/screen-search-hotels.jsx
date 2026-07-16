@@ -32,14 +32,20 @@ const HotelSearchPanel = () => {
     setLoading(false); setResults(list);
   }
 
+  const dropdownOpen = cityOpen;
+
   return (
     <div>
-      {/* Field row — mirrors the flight field grid, sky accent */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr .9fr auto", gap: 0, alignItems: "stretch",
-        border: "1px solid rgba(255,255,255,.22)", borderRadius: 18, overflow: "visible",
-        background: "linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06))",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,.35)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", position: "relative" }}>
-
+      {/* Field row — white row with sky accent, matches flights style */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr .9fr auto", gap: 0,
+        alignItems: "stretch",
+        background: "white",
+        border: "1px solid var(--line)",
+        borderRadius: 16,
+        overflow: "visible",
+        position: "relative"
+      }}>
         <GlassField label="Destination" icon={<Icon.pin size={14} />} accent="var(--sky)"
           value={`${city.city}`} sub={city.country} onClick={() => setCityOpen(o => !o)} open={cityOpen}>
           {cityOpen && (
@@ -57,19 +63,27 @@ const HotelSearchPanel = () => {
             { label: "Rooms", value: rooms, set: setRooms, min: 1, max: 6 },
           ]} />
 
-        <button onClick={runSearch} className="lift chip-shine" style={{
-          background: "linear-gradient(135deg, var(--sky), #3a5a8c)", color: "var(--cream)", border: "none",
-          borderRadius: "0 18px 18px 0", padding: "0 26px", display: "inline-flex", alignItems: "center", gap: 10,
+        <button onClick={runSearch} className="lift" style={{
+          background: "linear-gradient(135deg, var(--sky), #3d6f8f)", color: "var(--cream)", border: "none",
+          borderRadius: "0 16px 16px 0", padding: "0 26px", display: "inline-flex", alignItems: "center", gap: 10,
           fontSize: 14, letterSpacing: ".06em", fontWeight: 500, position: "relative", overflow: "hidden" }}>
           {loading ? <span className="spinner" /> : <Icon.search size={16} />} Search hotels
         </button>
       </div>
 
+      {/* ── Push-content spacer (animates when dropdown is open) ── */}
+      <div style={{
+        height: dropdownOpen ? 352 : 0,
+        transition: "height .35s cubic-bezier(.2,.8,.2,1)",
+        overflow: "hidden"
+      }} />
+
+      {/* Quick filter chips — light theme */}
       <div style={{ display: "flex", gap: 8, padding: "12px 6px 4px", flexWrap: "wrap" }}>
         {["Free cancellation", "Breakfast included", "Pool", "5-star", "Near centre"].map((c) => (
           <button key={c} className="chip-shine lift" style={{
-            background: "rgba(255,255,255,.08)", color: "rgba(251,247,238,.9)", border: "1px solid rgba(255,255,255,.22)",
-            padding: "7px 14px", borderRadius: 999, fontSize: 12, backdropFilter: "blur(10px)", position: "relative", overflow: "hidden" }}>{c}</button>
+            background: "transparent", color: "var(--ink-3)", border: "1px solid var(--line)",
+            padding: "7px 14px", borderRadius: 999, fontSize: 12, position: "relative", overflow: "hidden" }}>{c}</button>
         ))}
       </div>
 

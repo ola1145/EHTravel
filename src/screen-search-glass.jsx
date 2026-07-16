@@ -28,6 +28,7 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
   }, []);
 
   const dest = DESTINATIONS[activeDest];
+  const dropdownOpen = originOpen || destOpen;
 
   return (
     <div style={{ background: "var(--ink)", color: "var(--cream)", minHeight: "100vh", overflow: "hidden", position: "relative" }}>
@@ -83,11 +84,6 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
         Live · 12,408 flying now
       </div>
 
-      {/* Top frame markers */}
-      <div style={{ position: "absolute", top: 18, right: 28, display: "flex", gap: 8, fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", opacity: .65, zIndex: 10 }}>
-        <span>52.36°N</span><span>·</span><span>{(parallaxX*4 + 4.89).toFixed(2)}°W</span>
-      </div>
-
       {/* Main hero content */}
       <div style={{ position: "relative", zIndex: 5, paddingTop: 110, paddingLeft: 40, paddingRight: 40, paddingBottom: 60, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         {/* Eyebrow */}
@@ -127,47 +123,44 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
           </div>
         </div>
 
-        {/* Search panel — glassmorphic w/ animated sheen */}
-        <div className="rise rise-d3 anim-glow" style={{
-          position: "relative", overflow: "hidden",
-          background: "linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06) 60%, rgba(255,255,255,.14))",
-          color: "var(--cream)",
-          backdropFilter: "blur(28px) saturate(160%)",
-          WebkitBackdropFilter: "blur(28px) saturate(160%)",
-          borderRadius: 26, padding: 12,
-          border: "1px solid rgba(255,255,255,.28)"
+        {/* ── Search panel — light glassmorphic with push-content dropdown ── */}
+        <div className="rise rise-d3" style={{
+          position: "relative",
+          background: "rgba(251,247,238,.96)",
+          color: "var(--ink)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderRadius: 24,
+          padding: 12,
+          border: "1px solid rgba(251,247,238,.4)",
+          boxShadow: "0 30px 80px -30px rgba(0,0,0,.6)"
         }}>
-          {/* highlight sheen */}
-          <div aria-hidden style={{
-            position: "absolute", inset: 0, borderRadius: 26, pointerEvents: "none",
-            background: "radial-gradient(ellipse 80% 60% at 20% -10%, rgba(255,255,255,.35), transparent 60%)",
-            mixBlendMode: "screen", opacity: .6
-          }} />
-          {/* moving sheen */}
-          <div className="glass-sheen" aria-hidden />
-
           {/* Product mode switcher — Flights / Hotels / Cars (additive) */}
           <div style={{ display: "flex", gap: 6, padding: "6px 8px 10px" }}>
             {[
-              { key: "flights", label: "Flights", accent: "var(--sun)", icon: <Icon.plane size={15} /> },
-              { key: "hotels",  label: "Hotels",  accent: "var(--sky)",  icon: (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18V7a1 1 0 011-1h9a4 4 0 014 4v8"/><path d="M3 12h14"/><path d="M21 18v-3a2 2 0 00-2-2"/><path d="M7 10h.01"/><path d="M2 18h20"/></svg>
-              ) },
-              { key: "cars",    label: "Cars",    accent: "var(--grass)", icon: (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l1.5-4.5A2 2 0 018.4 7h7.2a2 2 0 011.9 1.5L19 13"/><path d="M4 13h16v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"/><path d="M7 16h.01M17 16h.01"/></svg>
-              ) },
+              { key: "flights", label: "Flights", accent: "var(--sun)",   accentDeep: "var(--sun-deep)" },
+              { key: "hotels",  label: "Hotels",  accent: "var(--sky)",   accentDeep: "#3d6f8f" },
+              { key: "cars",    label: "Cars",    accent: "var(--grass)", accentDeep: "#1e3d26" },
             ].map((m) => {
               const on = mode === m.key;
               return (
                 <button key={m.key} onClick={() => setMode(m.key)} className="lift" style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  background: on ? "rgba(255,255,255,.94)" : "rgba(255,255,255,.06)",
-                  color: on ? "var(--ink)" : "var(--cream)",
-                  border: on ? "1px solid rgba(255,255,255,.5)" : "1px solid rgba(255,255,255,.22)",
+                  background: on ? m.accent : "transparent",
+                  color: on ? "var(--cream)" : "var(--ink-3)",
+                  border: on ? `1px solid ${m.accent}` : "1px solid var(--line)",
                   padding: "9px 18px", borderRadius: 999, fontSize: 13, fontWeight: 500, letterSpacing: ".04em",
-                  backdropFilter: "blur(10px)", position: "relative" }}>
-                  <span style={{ color: on ? m.accent : "currentColor" }}>{m.icon}</span>{m.label}
-                  {on && <span style={{ width: 6, height: 6, borderRadius: 999, background: m.accent, marginLeft: 2 }} />}
+                  position: "relative"
+                }}>
+                  <span style={{ color: on ? "var(--cream)" : m.accent, display: "inline-flex", alignItems: "center" }}>
+                    {m.key === "flights" && <Icon.plane size={15} />}
+                    {m.key === "hotels" && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18V7a1 1 0 011-1h9a4 4 0 014 4v8"/><path d="M3 12h14"/><path d="M21 18v-3a2 2 0 00-2-2"/><path d="M7 10h.01"/><path d="M2 18h20"/></svg>
+                    )}
+                    {m.key === "cars" && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l1.5-4.5A2 2 0 018.4 7h7.2a2 2 0 011.9 1.5L19 13"/><path d="M4 13h16v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"/><path d="M7 16h.01M17 16h.01"/></svg>
+                    )}
+                  </span>{m.label}
                 </button>
               );
             })}
@@ -176,23 +169,36 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
           {mode === "flights" && (<>
           {/* Trip type tabs */}
           <div style={{ display: "flex", gap: 4, padding: "4px 8px 12px" }}>
-            {["Round trip", "One way", "Multi-city"].map((t, i) => (
+            {["Round trip", "One way", "Multi-city"].map((t) => (
               <button key={t} onClick={() => setQuery(q => ({ ...q, tripType: t }))} style={{
-                background: query.tripType === t ? "rgba(255,255,255,.92)" : "transparent",
-                color: query.tripType === t ? "var(--ink)" : "var(--cream)",
-                border: "none", padding: "8px 16px", borderRadius: 999,
-                fontSize: 12, letterSpacing: ".06em", fontWeight: 500,
-                backdropFilter: query.tripType === t ? "blur(8px)" : "none"
+                background: query.tripType === t ? "var(--sun)" : "transparent",
+                color: query.tripType === t ? "var(--cream)" : "var(--ink-3)",
+                border: query.tripType === t ? "1px solid var(--sun)" : "1px solid var(--line)",
+                padding: "8px 16px", borderRadius: 999,
+                fontSize: 12, letterSpacing: ".06em", fontWeight: 500
               }}>{t}</button>
             ))}
             <span style={{ flex: 1 }} />
-            <button style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.25)", padding: "8px 14px", borderRadius: 999, fontSize: 12, color: "var(--cream)", display: "inline-flex", alignItems: "center", gap: 8, backdropFilter: "blur(10px)" }}>
+            <button style={{
+              background: "transparent",
+              border: "1px solid var(--line)",
+              borderRadius: 999, padding: "8px 14px", fontSize: 12,
+              color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 8
+            }}>
               <Icon.user size={13} /> 1 adult, Economy
             </button>
           </div>
 
-          {/* Fields — frosted */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr auto 1.2fr 1fr 1fr auto", gap: 0, alignItems: "stretch", border: "1px solid rgba(255,255,255,.22)", borderRadius: 18, overflow: "visible", background: "linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", position: "relative" }}>
+          {/* Fields — white row with sun-colored icons, ink text */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "1.2fr auto 1.2fr 1fr 1fr auto", gap: 0,
+            alignItems: "stretch",
+            background: "white",
+            border: "1px solid var(--line)",
+            borderRadius: 16,
+            overflow: "visible",
+            position: "relative"
+          }}>
             <Field
               label="From"
               value={`${query.origin.city} (${query.origin.code})`}
@@ -210,8 +216,9 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
             </Field>
 
             <button onClick={() => setQuery(q => ({ ...q, origin: q.dest, dest: q.origin }))} style={{
-              border: "none", background: "rgba(255,255,255,.06)", borderLeft: "1px solid rgba(255,255,255,.18)", borderRight: "1px solid rgba(255,255,255,.18)",
-              padding: "0 12px", color: "var(--cream)"
+              border: "none", background: "transparent",
+              borderLeft: "1px solid var(--line)", borderRight: "1px solid var(--line)",
+              padding: "0 12px", color: "var(--ink-3)"
             }}>
               <Icon.swap size={16} />
             </button>
@@ -235,10 +242,10 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
             <Field label="Depart" value={query.departLabel} sub={query.departWeek} icon={<Icon.cal size={14} />} />
             <Field label="Return" value={query.returnLabel} sub={query.returnWeek} icon={<Icon.cal size={14} />} />
 
-            <button onClick={onSearch} className="anim-pulse-sun lift chip-shine" style={{
+            <button onClick={onSearch} className="anim-pulse-sun lift" style={{
               background: "linear-gradient(135deg, var(--sun), var(--sun-deep))",
               color: "var(--cream)", border: "none",
-              borderRadius: "0 18px 18px 0", padding: "0 28px",
+              borderRadius: "0 16px 16px 0", padding: "0 28px",
               display: "inline-flex", alignItems: "center", gap: 10,
               fontSize: 14, letterSpacing: ".06em", fontWeight: 500,
               position: "relative", overflow: "hidden"
@@ -248,15 +255,22 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
             </button>
           </div>
 
-          {/* Quick filter chips — frosted, with shimmer hover */}
+          {/* ── Push-content spacer (animates when dropdown is open) ── */}
+          <div style={{
+            height: dropdownOpen ? 352 : 0,
+            transition: "height .35s cubic-bezier(.2,.8,.2,1)",
+            overflow: "hidden"
+          }} />
+
+          {/* Quick filter chips */}
           <div style={{ display: "flex", gap: 8, padding: "12px 6px 4px", flexWrap: "wrap" }}>
             {["Direct only", "Daytime departures", "Window seat", "Carbon-light routes", "+ Use 12,400 miles"].map((c, i) => (
               <button key={c} className="chip-shine lift" style={{
-                background: i === 4 ? "rgba(227,107,58,.85)" : "rgba(255,255,255,.08)",
-                color: i === 4 ? "var(--cream)" : "rgba(251,247,238,.9)",
-                border: i === 4 ? "1px solid rgba(255,255,255,.4)" : "1px solid rgba(255,255,255,.22)",
+                background: i === 4 ? "var(--sun)" : "transparent",
+                color: i === 4 ? "var(--cream)" : "var(--ink-3)",
+                border: i === 4 ? "1px solid var(--sun)" : "1px solid var(--line)",
                 padding: "7px 14px", borderRadius: 999, fontSize: 12,
-                backdropFilter: "blur(10px)", position: "relative", overflow: "hidden"
+                position: "relative", overflow: "hidden"
               }}>{c}</button>
             ))}
           </div>
@@ -267,7 +281,7 @@ const ScreenSearch = ({ onSearch, query, setQuery }) => {
         </div>
 
         {/* Bottom row: featured destinations */}
-        <div className="rise rise-d4" style={{ marginTop: 36 }}>
+        <div className="rise rise-d4" style={{ marginTop: 140 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
             <div className="mono" style={{ fontSize: 11, letterSpacing: ".22em", textTransform: "uppercase", opacity: .7 }}>This week — corridor pricing</div>
             <div className="mono" style={{ fontSize: 11, letterSpacing: ".22em", textTransform: "uppercase", opacity: .7 }}>← drag →</div>
@@ -305,17 +319,17 @@ function Field({ label, value, sub, icon, onClick, open, children }) {
   return (
     <button onClick={onClick} style={{
       position: "relative", textAlign: "left", padding: "14px 18px", border: "none",
-      background: open ? "rgba(255,255,255,.18)" : "transparent",
-      color: "var(--cream)", cursor: onClick ? "pointer" : "default",
-      borderLeft: "1px solid rgba(255,255,255,.18)",
+      background: open ? "rgba(11,26,43,.04)" : "transparent",
+      color: "var(--ink)", cursor: onClick ? "pointer" : "default",
+      borderLeft: "1px solid var(--line)",
       transition: "background .25s ease"
     }}>
-      <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .75, display: "flex", alignItems: "center", gap: 6 }}>
+      <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .55, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ color: "var(--sun)" }}>{icon}</span>
         {label}
       </div>
       <div style={{ marginTop: 4, fontSize: 18, fontWeight: 500, letterSpacing: "-.01em" }}>{value}</div>
-      <div className="mono" style={{ fontSize: 11, opacity: .7, marginTop: 2 }}>{sub}</div>
+      <div className="mono" style={{ fontSize: 11, opacity: .6, marginTop: 2 }}>{sub}</div>
       {children}
     </button>
   );
@@ -331,39 +345,39 @@ function AirportPicker({ onPick, exclude }) {
   }, [q, exclude]);
   return (
     <div onClick={(e) => e.stopPropagation()} style={{
-      position: "absolute", top: "calc(100% + 8px)", left: 0, width: 360, zIndex: 30,
-      background: "linear-gradient(180deg, rgba(20,40,63,.78), rgba(11,26,43,.78))",
-      border: "1px solid rgba(255,255,255,.22)", borderRadius: 16,
-      backdropFilter: "blur(28px) saturate(160%)", WebkitBackdropFilter: "blur(28px) saturate(160%)",
-      boxShadow: "0 30px 70px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18)",
-      overflow: "hidden", color: "var(--cream)"
+      position: "absolute", top: "calc(100% + 6px)", left: 0, width: 360, zIndex: 30,
+      background: "white",
+      border: "1px solid var(--line)",
+      borderRadius: 14,
+      boxShadow: "0 24px 60px -20px rgba(0,0,0,.4)",
+      overflow: "hidden", color: "var(--ink)"
     }}>
-      <div style={{ padding: 12, borderBottom: "1px solid rgba(255,255,255,.14)", display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon.search size={14} />
+      <div style={{ padding: 12, borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon.search size={14} style={{ color: "var(--ink-3)" }} />
         <input
           autoFocus
           value={q} onChange={e => setQ(e.target.value)}
           placeholder="Search city or airport"
-          style={{ flex: 1, border: "none", outline: "none", fontSize: 14, background: "transparent", color: "var(--cream)" }}
+          style={{ flex: 1, border: "none", outline: "none", fontSize: 14, background: "transparent", color: "var(--ink)" }}
         />
       </div>
       <div style={{ maxHeight: 280, overflowY: "auto" }}>
         {filtered.map(a => (
           <button key={a.code} onClick={() => onPick(a)} style={{
             width: "100%", textAlign: "left", padding: "10px 14px", border: "none",
-            background: "transparent", color: "var(--cream)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer"
+            background: "transparent", color: "var(--ink)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer"
           }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.08)"}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(11,26,43,.06)"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ width: 30, opacity: .7 }}><Icon.pin size={14}/></span>
+            <span style={{ width: 30, opacity: .5 }}><Icon.pin size={14}/></span>
             <span style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{a.city}</div>
-              <div className="mono" style={{ fontSize: 11, opacity: .65 }}>{a.name}</div>
+              <div className="mono" style={{ fontSize: 11, opacity: .6 }}>{a.name}</div>
             </span>
-            <span className="mono" style={{ fontSize: 12, letterSpacing: ".1em", opacity: .75 }}>{a.code}</span>
+            <span className="mono" style={{ fontSize: 12, letterSpacing: ".1em", opacity: .5 }}>{a.code}</span>
           </button>
         ))}
-        {!filtered.length && <div style={{ padding: 18, textAlign: "center", opacity: .65, fontSize: 13 }}>No airports match.</div>}
+        {!filtered.length && <div style={{ padding: 18, textAlign: "center", opacity: .6, fontSize: 13 }}>No airports match.</div>}
       </div>
     </div>
   );

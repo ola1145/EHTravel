@@ -1,41 +1,42 @@
-// Shared glassmorphic search primitives for the Hotels + Cars panels.
+// Shared light-themed search primitives for the Hotels + Cars panels.
+// Matches the flights panel style: white fields, var(--ink) text, var(--line) dividers.
 // Styled from ui-tokens.json / index.html :root — no new design system. Attaches to window.
 // Loaded BEFORE screen-search-hotels.jsx and screen-search-cars.jsx.
 
 // ---- frosted field (matches the flight Field look, with a mode accent) ------
 function GlassField({ label, icon, accent = "var(--sun)", value, sub, onClick, open, children }) {
   return (
-    <div style={{ position: "relative", borderLeft: "1px solid rgba(255,255,255,.18)" }}>
+    <div style={{ position: "relative", borderLeft: "1px solid var(--line)" }}>
       <button onClick={onClick} style={{
         width: "100%", height: "100%", textAlign: "left", padding: "14px 18px", border: "none",
-        background: open ? "rgba(255,255,255,.18)" : "transparent", color: "var(--cream)",
+        background: open ? "rgba(11,26,43,.04)" : "transparent", color: "var(--ink)",
         cursor: onClick ? "pointer" : "default", transition: "background .25s ease" }}>
-        <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .75, display: "flex", alignItems: "center", gap: 6 }}>
+        <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .55, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: accent }}>{icon}</span>{label}
         </div>
         <div style={{ marginTop: 4, fontSize: 18, fontWeight: 500, letterSpacing: "-.01em" }}>{value}</div>
-        {sub && <div className="mono" style={{ fontSize: 11, opacity: .7, marginTop: 2 }}>{sub}</div>}
+        {sub && <div className="mono" style={{ fontSize: 11, opacity: .6, marginTop: 2 }}>{sub}</div>}
       </button>
       {children}
     </div>
   );
 }
 
-// ---- date field (native input, frosted) -------------------------------------
+// ---- date field (native input, light) -------------------------------------
 function GlassDateField({ label, value, onChange, accent = "var(--sun)" }) {
   return (
-    <div style={{ borderLeft: "1px solid rgba(255,255,255,.18)", padding: "14px 18px", color: "var(--cream)" }}>
-      <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .75, display: "flex", alignItems: "center", gap: 6 }}>
+    <div style={{ borderLeft: "1px solid var(--line)", padding: "14px 18px", color: "var(--ink)" }}>
+      <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .55, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ color: accent }}><Icon.cal size={14} /></span>{label}
       </div>
       <input type="date" value={value} onChange={(e) => onChange(e.target.value)} style={{
         marginTop: 4, fontSize: 16, fontWeight: 500, background: "transparent", border: "none", outline: "none",
-        color: "var(--cream)", colorScheme: "dark", width: "100%", padding: 0 }} />
+        color: "var(--ink)", colorScheme: "light", width: "100%", padding: 0 }} />
     </div>
   );
 }
 
-// ---- searchable picker dropdown --------------------------------------------
+// ---- searchable picker dropdown (light theme) --------------------------------------------
 function GlassPicker({ items, onPick, placeholder = "Search" }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
@@ -44,49 +45,50 @@ function GlassPicker({ items, onPick, placeholder = "Search" }) {
   }, [q, items]);
   return (
     <div onClick={(e) => e.stopPropagation()} style={{
-      position: "absolute", top: "calc(100% + 8px)", left: 0, width: 360, zIndex: 30,
-      background: "linear-gradient(180deg, rgba(20,40,63,.82), rgba(11,26,43,.82))",
-      border: "1px solid rgba(255,255,255,.22)", borderRadius: 16,
-      backdropFilter: "blur(28px) saturate(160%)", WebkitBackdropFilter: "blur(28px) saturate(160%)",
-      boxShadow: "0 30px 70px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18)", overflow: "hidden", color: "var(--cream)" }}>
-      <div style={{ padding: 12, borderBottom: "1px solid rgba(255,255,255,.14)", display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon.search size={14} />
+      position: "absolute", top: "calc(100% + 6px)", left: 0, width: 360, zIndex: 30,
+      background: "white",
+      border: "1px solid var(--line)",
+      borderRadius: 14,
+      boxShadow: "0 24px 60px -20px rgba(0,0,0,.4)",
+      overflow: "hidden", color: "var(--ink)" }}>
+      <div style={{ padding: 12, borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon.search size={14} style={{ color: "var(--ink-3)" }} />
         <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder={placeholder}
-          style={{ flex: 1, border: "none", outline: "none", fontSize: 14, background: "transparent", color: "var(--cream)" }} />
+          style={{ flex: 1, border: "none", outline: "none", fontSize: 14, background: "transparent", color: "var(--ink)" }} />
       </div>
       <div style={{ maxHeight: 280, overflowY: "auto" }}>
         {filtered.map(a => (
-          <button key={a.code} onClick={() => onPick(a)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: "transparent", color: "var(--cream)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.08)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ width: 26, opacity: .7 }}><Icon.pin size={14} /></span>
+          <button key={a.code} onClick={() => onPick(a)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: "transparent", color: "var(--ink)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(11,26,43,.06)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={{ width: 30, opacity: .5 }}><Icon.pin size={14} /></span>
             <span style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{a.city}</div>
-              <div className="mono" style={{ fontSize: 11, opacity: .65 }}>{a.country}</div>
+              <div className="mono" style={{ fontSize: 11, opacity: .6 }}>{a.country}</div>
             </span>
-            <span className="mono" style={{ fontSize: 12, letterSpacing: ".1em", opacity: .75 }}>{a.code}</span>
+            <span className="mono" style={{ fontSize: 12, letterSpacing: ".1em", opacity: .5 }}>{a.code}</span>
           </button>
         ))}
-        {!filtered.length && <div style={{ padding: 18, textAlign: "center", opacity: .65, fontSize: 13 }}>No matches.</div>}
+        {!filtered.length && <div style={{ padding: 18, textAlign: "center", opacity: .6, fontSize: 13 }}>No matches.</div>}
       </div>
     </div>
   );
 }
 
-// ---- stepper field (guests / rooms / driver age) ----------------------------
+// ---- stepper field (guests / rooms / driver age, light theme) ----------------------------
 function GlassStepperField({ label, summary, steppers, accent = "var(--sun)" }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ position: "relative", borderLeft: "1px solid rgba(255,255,255,.18)" }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: "100%", height: "100%", textAlign: "left", padding: "14px 18px", border: "none", background: open ? "rgba(255,255,255,.18)" : "transparent", color: "var(--cream)", cursor: "pointer" }}>
-        <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .75, display: "flex", alignItems: "center", gap: 6 }}>
+    <div style={{ position: "relative", borderLeft: "1px solid var(--line)" }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: "100%", height: "100%", textAlign: "left", padding: "14px 18px", border: "none", background: open ? "rgba(11,26,43,.04)" : "transparent", color: "var(--ink)", cursor: "pointer" }}>
+        <div className="mono" style={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase", opacity: .55, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: accent }}><Icon.user size={14} /></span>{label}
         </div>
         <div style={{ marginTop: 4, fontSize: 16, fontWeight: 500 }}>{summary}</div>
       </button>
       {open && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 260, zIndex: 30,
-          background: "linear-gradient(180deg, rgba(20,40,63,.82), rgba(11,26,43,.82))", border: "1px solid rgba(255,255,255,.22)", borderRadius: 16,
-          backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", padding: 8, color: "var(--cream)", boxShadow: "0 30px 70px -20px rgba(0,0,0,.6)" }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 260, zIndex: 30,
+          background: "white", border: "1px solid var(--line)", borderRadius: 14,
+          padding: 8, color: "var(--ink)", boxShadow: "0 24px 60px -20px rgba(0,0,0,.4)" }}>
           {steppers.map((s) => (
             <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px" }}>
               <span style={{ fontSize: 14 }}>{s.label}</span>
@@ -104,7 +106,7 @@ function GlassStepperField({ label, summary, steppers, accent = "var(--sun)" }) 
 }
 function StepBtn({ children, onClick, disabled }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ width: 28, height: 28, borderRadius: 999, border: "1px solid rgba(255,255,255,.3)", background: "rgba(255,255,255,.08)", color: "var(--cream)", fontSize: 16, lineHeight: 1, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .4 : 1 }}>{children}</button>
+    <button onClick={onClick} disabled={disabled} style={{ width: 28, height: 28, borderRadius: 999, border: "1px solid var(--line)", background: "rgba(11,26,43,.06)", color: "var(--ink)", fontSize: 16, lineHeight: 1, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .4 : 1 }}>{children}</button>
   );
 }
 
@@ -231,7 +233,7 @@ function BookingOverlay({ kind, title, priceLabel, onClose, onConfirm }) {
           <div style={{ padding: 28, textAlign: "center" }}>
             {conf?.error ? (
               <>
-                <div className="serif" style={{ fontSize: 28 }}>Couldn’t complete booking</div>
+                <div className="serif" style={{ fontSize: 28 }}>Couldn't complete booking</div>
                 <div className="mono" style={{ fontSize: 12, opacity: .7, marginTop: 8 }}>{conf.error}</div>
               </>
             ) : (

@@ -28,13 +28,20 @@ const CarSearchPanel = () => {
     setLoading(false); setResults(list);
   }
 
+  const dropdownOpen = pickupOpen || dropoffOpen;
+
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 1fr 1fr .8fr auto", gap: 0, alignItems: "stretch",
-        border: "1px solid rgba(255,255,255,.22)", borderRadius: 18, overflow: "visible",
-        background: "linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06))",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,.35)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", position: "relative" }}>
-
+      {/* Field row — white row with grass accent, matches flights style */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1.2fr 1.2fr 1fr 1fr .8fr auto", gap: 0,
+        alignItems: "stretch",
+        background: "white",
+        border: "1px solid var(--line)",
+        borderRadius: 16,
+        overflow: "visible",
+        position: "relative"
+      }}>
         <GlassField label="Pick-up" icon={<Icon.pin size={14} />} accent="var(--grass)"
           value={pickup.city} sub={pickup.code} onClick={() => { setPickupOpen(o => !o); setDropoffOpen(false); }} open={pickupOpen}>
           {pickupOpen && <GlassPicker items={choices} onPick={(c) => { setPickup(AIRPORTS.find(a => a.code === c.code)); setPickupOpen(false); }} placeholder="City or airport" />}
@@ -51,19 +58,29 @@ const CarSearchPanel = () => {
         <GlassStepperField label="Driver age" accent="var(--grass)" summary={`${age} yrs`}
           steppers={[{ label: "Driver age", value: age, set: setAge, min: 18, max: 90 }]} />
 
-        <button onClick={runSearch} className="lift chip-shine" style={{
-          background: "linear-gradient(135deg, var(--grass), #234a2c)", color: "var(--cream)", border: "none",
-          borderRadius: "0 18px 18px 0", padding: "0 26px", display: "inline-flex", alignItems: "center", gap: 10,
+        <button onClick={runSearch} className="lift" style={{
+          background: "linear-gradient(135deg, var(--grass), #1e3d26)", color: "var(--cream)", border: "none",
+          borderRadius: "0 16px 16px 0", padding: "0 26px", display: "inline-flex", alignItems: "center", gap: 10,
           fontSize: 14, letterSpacing: ".06em", fontWeight: 500, position: "relative", overflow: "hidden" }}>
           {loading ? <span className="spinner" /> : <Icon.search size={16} />} Search cars
         </button>
       </div>
 
+      {/* ── Push-content spacer (animates when dropdown is open) ── */}
+      <div style={{
+        height: dropdownOpen ? 352 : 0,
+        transition: "height .35s cubic-bezier(.2,.8,.2,1)",
+        overflow: "hidden"
+      }} />
+
+      {/* Quick filter chips — light theme */}
       <div style={{ display: "flex", gap: 8, padding: "12px 6px 4px", flexWrap: "wrap", alignItems: "center" }}>
         {["Automatic", "SUV", "Unlimited miles", "Free cancellation"].map((c) => (
-          <button key={c} className="chip-shine lift" style={{ background: "rgba(255,255,255,.08)", color: "rgba(251,247,238,.9)", border: "1px solid rgba(255,255,255,.22)", padding: "7px 14px", borderRadius: 999, fontSize: 12, backdropFilter: "blur(10px)", position: "relative", overflow: "hidden" }}>{c}</button>
+          <button key={c} className="chip-shine lift" style={{
+            background: "transparent", color: "var(--ink-3)", border: "1px solid var(--line)",
+            padding: "7px 14px", borderRadius: 999, fontSize: 12, position: "relative", overflow: "hidden" }}>{c}</button>
         ))}
-        <span className="mono" style={{ fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", opacity: .55, marginLeft: 4 }}>demo inventory · provider-ready schema</span>
+        <span className="mono" style={{ fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", opacity: .45, marginLeft: 4 }}>demo inventory · provider-ready schema</span>
       </div>
 
       {(loading || results) && (
