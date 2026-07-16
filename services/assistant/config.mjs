@@ -31,7 +31,7 @@ export function loadConfig(overrides = {}) {
     authIssuer: process.env.EHT_AUTH_ISSUER || "",
     authAudience: process.env.EHT_AUTH_AUDIENCE || "",
     allowAnonymous: process.env.ASSISTANT_ALLOW_ANONYMOUS !== "false",
-    allowedOrigins: (process.env.ASSISTANT_ALLOWED_ORIGINS || "http://localhost:3000,https://web-production-11001.up.railway.app")
+    allowedOrigins: (process.env.ASSISTANT_ALLOWED_ORIGINS || "http://localhost:3000,https://web-production-11001.up.railway.app,https://www.ehtravel.org")
       .split(",").map((value) => value.trim()).filter(Boolean),
     maxRequestBytes: intEnv("ASSISTANT_MAX_REQUEST_BYTES", 27 * MiB),
     maxFiles: intEnv("ASSISTANT_MAX_FILES", 5),

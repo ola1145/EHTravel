@@ -17,6 +17,7 @@ cors:
     - origins:
         - http://localhost:3000
         - https://web-production-11001.up.railway.app
+        - https://www.ehtravel.org
   allow_headers:
     - content-type
     - authorization
