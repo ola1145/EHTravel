@@ -1,9 +1,0 @@
-mutation CreateFlightOrder($input: FlightOrderInput!) {
-  createFlightOrder(input: $input) {
-    id
-    bookingReference
-    totalAmount
-    totalCurrency
-    createdAt
-  }
-}

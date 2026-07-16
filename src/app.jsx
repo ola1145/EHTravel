@@ -1,6 +1,6 @@
 // Top-level App — manages stage transitions and shared state
 const { ScreenSearch, ScreenResults, ScreenSeats, ScreenPassenger, ScreenConfirm,
-        TopNav, StepRail, Icon, fmtMoney } = window;
+        TopNav, StepRail, Icon, fmtMoney, FloatingTravelAssistant } = window;
 
 function App() {
   const [stage, setStage] = useState("search"); // search | results | seats | passenger | confirm
@@ -134,6 +134,7 @@ function App() {
           />
         )}
       </div>
+      <FloatingTravelAssistant />
     </div>
   );
 }

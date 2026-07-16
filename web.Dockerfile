@@ -5,6 +5,7 @@ FROM caddy:2-alpine
 WORKDIR /srv
 COPY index.html ui-tokens.json ./
 COPY src ./src
+COPY web.Caddyfile /etc/caddy/Caddyfile
 COPY web-entrypoint.sh /usr/local/bin/web-entrypoint.sh
 RUN chmod +x /usr/local/bin/web-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/web-entrypoint.sh"]

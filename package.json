@@ -6,12 +6,14 @@
   "type": "module",
   "scripts": {
     "dev": "npx --yes serve . -l 3000",
+    "assistant": "node --env-file-if-exists=.env services/assistant/server.mjs",
+    "assistant:token": "node --env-file-if-exists=.env scripts/create-assistant-token.mjs",
     "compose": "rover supergraph compose --config graphql/supergraph.yaml > graphql/supergraph.graphql",
     "router": "rover dev --supergraph-config graphql/supergraph.yaml --router-config graphql/router.yaml",
     "graphql:check": "rover supergraph compose --config graphql/supergraph.yaml > /dev/null && echo '✓ supergraph composes'",
     "lint": "node scripts/lint.mjs",
     "lint:fix": "node scripts/lint.mjs --fix",
-    "test": "node scripts/test.mjs",
+    "test": "node --test services/assistant/*.test.mjs && node scripts/test.mjs",
     "build": "echo 'Static front end — no build step (index.html + src/**). Router builds via graphql/Dockerfile.'",
     "ci": "npm run lint && npm run test"
   },

@@ -160,72 +160,11 @@ type Query {
     )
 }
 
-# =============================================================================
-# Mutations
-# =============================================================================
-
-type Mutation {
-  """Create a flight booking (order) for a selected offer. Requires a live Duffel token."""
-  createFlightOrder(input: FlightOrderInput!): FlightOrder
-    @connect(
-      source: "duffel"
-      http: {
-        POST: "/air/orders"
-        body: """
-        $({
-          data: {
-            type: $("instant"),
-            selected_offers: [$args.input.offerId],
-            passengers: $args.input.passengers,
-            payments: [{
-              type: $("balance"),
-              amount: $args.input.amount,
-              currency: $args.input.currency
-            }]
-          }
-        })
-        """
-      }
-      selection: """
-      $.data {
-        id
-        bookingReference: booking_reference
-        totalAmount: total_amount
-        totalCurrency: total_currency
-        createdAt: created_at
-      }
-      """
-    )
-
-  """Create a hotel booking from a previously created quote."""
-  createStayBooking(input: StayBookingInput!): StayBooking
-    @connect(
-      source: "duffel"
-      http: {
-        POST: "/stays/bookings"
-        body: """
-        $({
-          data: {
-            quote_id: $args.input.quoteId,
-            email: $args.input.email,
-            phone_number: $args.input.phoneNumber,
-            guests: $args.input.guests,
-            accommodation_special_requests: $args.input.specialRequests
-          }
-        })
-        """
-      }
-      selection: """
-      $.data {
-        id
-        reference: booking_reference
-        status
-        totalAmount: total_amount
-        totalCurrency: total_currency
-      }
-      """
-    )
-}
+# Booking writes intentionally do not live in this public connector. The previous balance-funded
+# createFlightOrder/createStayBooking fields had no user authentication and could spend the shared
+# Duffel account balance. A future checkout service must authenticate the traveller, derive the
+# authoritative amount from a refreshed offer, tokenize payment, enforce idempotency, and persist
+# order ownership before reintroducing booking mutations.
 
 # =============================================================================
 # Types
@@ -273,14 +212,6 @@ type Place {
   name: String
 }
 
-type FlightOrder {
-  id: ID!
-  bookingReference: String
-  totalAmount: String
-  totalCurrency: String
-  createdAt: String
-}
-
 type StayResult {
   id: ID!
   cheapestRateTotalAmount: String
@@ -312,14 +243,6 @@ type Address {
   postalCode: String
 }
 
-type StayBooking {
-  id: ID!
-  reference: String
-  status: String
-  totalAmount: String
-  totalCurrency: String
-}
-
 # =============================================================================
 # Inputs
 # =============================================================================
@@ -344,24 +267,6 @@ input FlightPassengerInput {
   type: String
 }
 
-input FlightOrderInput {
-  offerId: ID!
-  passengers: [OrderPassengerInput!]!
-  amount: String!
-  currency: String!
-}
-
-input OrderPassengerInput {
-  id: ID!
-  givenName: String!
-  familyName: String!
-  bornOn: String
-  email: String
-  phoneNumber: String
-  title: String
-  gender: String
-}
-
 input StaySearchInput {
   "ISO 8601 date"
   checkInDate: String!
@@ -382,18 +287,4 @@ input StayLocationInput {
   longitude: Float!
   "Search radius in kilometres"
   radius: Int!
-}
-
-input StayBookingInput {
-  quoteId: ID!
-  email: String!
-  phoneNumber: String!
-  guests: [StayBookingGuestInput!]!
-  specialRequests: String
-}
-
-input StayBookingGuestInput {
-  givenName: String!
-  familyName: String!
-  bornOn: String
 }

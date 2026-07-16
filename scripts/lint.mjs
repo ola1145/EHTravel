@@ -30,15 +30,24 @@ for (const f of ["package.json", "ui-tokens.json", ".mcp.json", "skills-lock.jso
 // 3) Required GraphQL artifacts present
 console.log("GraphQL layer:");
 for (const f of ["graphql/duffel.graphql", "graphql/cars.graphql", "graphql/supergraph.yaml", "graphql/router.yaml",
+                 "graphql/assistant.graphql",
                  "graphql/operations/searchFlights.graphql", "graphql/operations/searchStays.graphql",
-                 "graphql/operations/searchCars.graphql", "graphql/operations/createFlightOrder.graphql"]) {
+                 "graphql/operations/searchCars.graphql", "graphql/operations/myFlightOrders.graphql",
+                 "graphql/operations/sendTravelAssistantMessage.graphql"]) {
   existsSync(join(root, f)) ? ok(f) : bad(`missing ${f}`);
 }
 
-// 4) No hardcoded Duffel token in tracked files (secret hygiene)
+// 4) Server-side JavaScript syntax
+console.log("Assistant middleware syntax:");
+for (const f of readdirSync(join(root, "services/assistant")).filter((name) => name.endsWith(".mjs"))) {
+  const r = spawnSync(process.execPath, ["--check", join(root, "services/assistant", f)], { encoding: "utf8" });
+  r.status === 0 ? ok(`services/assistant/${f}`) : bad(`services/assistant/${f}\n${r.stderr}`);
+}
+
+// 5) No hardcoded provider token in tracked files (secret hygiene)
 console.log("Secret hygiene:");
 const scan = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap(d => {
-  if (d.name === "node_modules" || d.name === ".git" || d.name.startsWith(".env")) return [];
+  if (d.name === "node_modules" || d.name === ".git" || d.name === ".env" || (/^\.env\./.test(d.name) && d.name !== ".env.example")) return [];
   const p = join(dir, d.name);
   if (d.isDirectory()) return scan(p);
   if (/\.(jsx?|mjs|graphql|ya?ml|json|html|md)$/.test(d.name)) return [p];
@@ -48,8 +57,9 @@ let leaked = 0;
 for (const p of scan(root)) {
   const t = readFileSync(p, "utf8");
   if (/duffel_(test|live)_[A-Za-z0-9]{10,}/.test(t)) { bad(`possible Duffel token in ${p.replace(root + "/", "")}`); leaked++; }
+  if (/\bsk-[A-Za-z0-9_-]{20,}\b/.test(t)) { bad(`possible model API key in ${p.replace(root + "/", "")}`); leaked++; }
 }
-if (!leaked) ok("no Duffel tokens committed");
+if (!leaked) ok("no provider tokens committed");
 
 console.log(errors ? `\nLINT FAILED (${errors})` : "\nLINT OK");
 process.exit(errors ? 1 : 0);

@@ -10,14 +10,40 @@ health_check:
   enabled: true
   path: /health
 
-# Public GraphQL gateway over Duffel — no cookies/credentials, so any browser origin
-# may call it (this lets the deployed front end + local dev both reach the router).
-# Lock this down to specific origins later if you don't want a public API.
+# Exact browser origins are required before forwarding identity-bearing requests to the
+# assistant middleware. Public travel search remains available from these same front ends.
 cors:
-  allow_any_origin: true
+  policies:
+    - origins:
+        - http://localhost:3000
+        - https://web-production-11001.up.railway.app
   allow_headers:
     - content-type
+    - authorization
+    - x-ehtravel-session-id
+  methods:
+    - GET
+    - POST
+    - OPTIONS
 
-# Surface connector HTTP errors during development.
+# Upstream connector details can contain provider internals and are not exposed to clients.
 include_subgraph_errors:
-  all: true
+  all: false
+
+limits:
+  router:
+    http_max_request_bytes: 1000000
+    parser_max_tokens: 5000
+    parser_max_recursion: 100
+  connector:
+    all:
+      http_max_response_size: 5MiB
+
+connectors:
+  max_requests_per_operation_per_source: 10
+  sources:
+    assistant.assistant:
+      override_url: "${env.ASSISTANT_SERVICE_URL:-http://localhost:4100}"
+      max_requests_per_operation: 2
+      $config:
+        service_key: "${env.ASSISTANT_SERVICE_KEY:-ehtravel-local-service-key}"

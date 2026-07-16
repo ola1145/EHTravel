@@ -1,5 +1,5 @@
 # rover supergraph compose --config graphql/supergraph.yaml > graphql/supergraph.graphql
-# Federated supergraph for EHTravel: Duffel (flights + stays) + Cars (mock).
+# Federated supergraph for EHTravel: public Duffel search, Cars (mock), and authenticated assistant middleware.
 federation_version: =2.12.0
 subgraphs:
   duffel:
@@ -12,3 +12,7 @@ subgraphs:
     routing_url: https://cars-provider.example.invalid
     schema:
       file: ./cars.graphql
+  assistant:
+    routing_url: http://localhost:4100
+    schema:
+      file: ./assistant.graphql

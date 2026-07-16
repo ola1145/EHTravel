@@ -13,6 +13,39 @@ const EHT_ENDPOINT =
     document.querySelector('meta[name="graphql-endpoint"]')?.content) ||
   "http://localhost:4000/graphql";
 
+const EHT_ASSISTANT_UPLOAD_ENDPOINT =
+  (typeof window !== "undefined" && window.ASSISTANT_UPLOAD_ENDPOINT) ||
+  (typeof document !== "undefined" &&
+    document.querySelector('meta[name="assistant-upload-endpoint"]')?.content) ||
+  "http://localhost:4100/v1/uploads";
+
+function assistantSessionId() {
+  const key = "ehtravel-assistant-session";
+  try {
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    const created = crypto.randomUUID ? crypto.randomUUID() : `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(key, created);
+    return created;
+  } catch {
+    return `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+const EHT_ASSISTANT_SESSION_ID = assistantSessionId();
+
+async function authHeaders() {
+  // The host authentication layer may provide a short-lived token callback. Tokens are never
+  // persisted by this client or placed in localStorage.
+  const provided = typeof window?.EHT_GET_AUTH_TOKEN === "function"
+    ? await window.EHT_GET_AUTH_TOKEN()
+    : window?.EHT_AUTH_TOKEN;
+  return {
+    ...(provided ? { Authorization: `Bearer ${provided}` } : {}),
+    "X-EHTravel-Session-ID": EHT_ASSISTANT_SESSION_ID,
+  };
+}
+
 // ---- low-level fetch --------------------------------------------------------
 async function gqlFetch(query, variables, { timeoutMs = 12000 } = {}) {
   const ctrl = new AbortController();
@@ -20,7 +53,7 @@ async function gqlFetch(query, variables, { timeoutMs = 12000 } = {}) {
   try {
     const res = await fetch(EHT_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ query, variables }),
       signal: ctrl.signal,
     });
@@ -77,8 +110,19 @@ const OP_SEARCH_CARS = `query SearchCars($input: CarSearchInput!) {
     id vendor vehicleClass vehicleName transmission seats bags imageUrl totalAmount currency pickupLocation dropoffLocation
   }
 }`;
-const OP_CREATE_FLIGHT_ORDER = `mutation CreateFlightOrder($input: FlightOrderInput!) {
-  createFlightOrder(input: $input) { id bookingReference totalAmount totalCurrency createdAt }
+const OP_SEND_TRAVEL_ASSISTANT_MESSAGE = `mutation SendTravelAssistantMessage($input: TravelAssistantInput!) {
+  sendTravelAssistantMessage(input: $input) {
+    conversationId message
+    orders { id bookingReference status totalAmount totalCurrency createdAt
+      slices { origin { iataCode cityName } destination { iataCode cityName } departingAt arrivingAt duration } }
+    attachments { id name mimeType kind size expiresAt }
+  }
+}`;
+const OP_MY_FLIGHT_ORDERS = `query MyFlightOrders($bookingReference: String) {
+  myFlightOrders(bookingReference: $bookingReference) {
+    id bookingReference status totalAmount totalCurrency createdAt
+    slices { origin { iataCode cityName } destination { iataCode cityName } departingAt arrivingAt duration }
+  }
 }`;
 
 // ---- mappers: Duffel GraphQL shape → existing UI flight shape ---------------
@@ -210,9 +254,31 @@ const EHT_API = {
     }
   },
 
-  async createFlightOrder(input) {
-    return gqlFetch(OP_CREATE_FLIGHT_ORDER, { input });
+  async uploadAssistantAttachments(files, { signal } = {}) {
+    const form = new FormData();
+    for (const file of files) form.append("files", file, file.name);
+    const res = await fetch(EHT_ASSISTANT_UPLOAD_ENDPOINT, {
+      method: "POST",
+      headers: await authHeaders(),
+      body: form,
+      signal,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error?.message || `Attachment upload failed (${res.status})`);
+    return json.attachments || [];
   },
+
+  async sendAssistantMessage(input) {
+    const data = await gqlFetch(OP_SEND_TRAVEL_ASSISTANT_MESSAGE, { input }, { timeoutMs: 75000 });
+    return data?.sendTravelAssistantMessage;
+  },
+
+  async myFlightOrders(bookingReference) {
+    const data = await gqlFetch(OP_MY_FLIGHT_ORDERS, { bookingReference: bookingReference || null });
+    return data?.myFlightOrders || [];
+  },
+
+  assistant: { uploadEndpoint: EHT_ASSISTANT_UPLOAD_ENDPOINT, sessionId: EHT_ASSISTANT_SESSION_ID },
 };
 
 window.EHT_API = EHT_API;

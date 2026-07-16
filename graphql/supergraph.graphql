@@ -2,7 +2,8 @@ schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
   @link(url: "https://specs.apollo.dev/join/v0.5", for: EXECUTION)
   @link(url: "https://specs.apollo.dev/connect/v0.3", for: EXECUTION)
-  @join__directive(graphs: [CARS, DUFFEL], name: "link", args: {url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"]})
+  @join__directive(graphs: [ASSISTANT, CARS, DUFFEL], name: "link", args: {url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"]})
+  @join__directive(graphs: [ASSISTANT], name: "source", args: {name: "assistant", http: {baseURL: "http://localhost:4100", headers: [{name: "X-Assistant-Service-Key", value: "{$config.service_key}"}, {name: "Authorization", from: "Authorization"}, {name: "X-EHTravel-Session-ID", from: "X-EHTravel-Session-ID"}, {name: "Content-Type", value: "application/json"}, {name: "Accept", value: "application/json"}]}})
   @join__directive(graphs: [CARS], name: "source", args: {name: "cars_mock", http: {baseURL: "https://cars-provider.example.invalid", headers: [{name: "Accept", value: "application/json"}]}})
   @join__directive(graphs: [DUFFEL], name: "source", args: {name: "duffel", http: {baseURL: "https://api.duffel.com", headers: [{name: "Authorization", value: "Bearer {$env.DUFFEL_API_TOKEN}"}, {name: "Duffel-Version", value: "v2"}, {name: "Accept", value: "application/json"}, {name: "Content-Type", value: "application/json"}]}})
 {
@@ -60,6 +61,53 @@ type Airline
   logoUrl: String
 }
 
+"""
+Metadata for a short-lived attachment; raw bytes never traverse GraphQL.
+"""
+type AssistantAttachmentSummary
+  @join__type(graph: ASSISTANT)
+{
+  id: ID!
+  name: String!
+  mimeType: String!
+  kind: String!
+  size: Int!
+  expiresAt: String!
+}
+
+"""A sanitized, authorization-checked projection of a flight order."""
+type AssistantFlightOrder
+  @join__type(graph: ASSISTANT)
+{
+  id: ID!
+  bookingReference: String
+  status: String!
+  totalAmount: String
+  totalCurrency: String
+  createdAt: String
+  slices: [AssistantFlightSlice!]!
+}
+
+"""A route in an owned flight order."""
+type AssistantFlightSlice
+  @join__type(graph: ASSISTANT)
+{
+  origin: AssistantPlace
+  destination: AssistantPlace
+  departingAt: String
+  arrivingAt: String
+  duration: String
+}
+
+"""A location in an owned flight order."""
+type AssistantPlace
+  @join__type(graph: ASSISTANT)
+{
+  iataCode: String
+  cityName: String
+  name: String
+}
+
 type CarResult
   @join__type(graph: CARS)
 {
@@ -100,25 +148,6 @@ type FlightOffer
   taxAmount: String
   owner: Airline
   slices: [FlightSlice!]
-}
-
-type FlightOrder
-  @join__type(graph: DUFFEL)
-{
-  id: ID!
-  bookingReference: String
-  totalAmount: String
-  totalCurrency: String
-  createdAt: String
-}
-
-input FlightOrderInput
-  @join__type(graph: DUFFEL)
-{
-  offerId: ID!
-  passengers: [OrderPassengerInput!]!
-  amount: String!
-  currency: String!
 }
 
 input FlightPassengerInput
@@ -184,6 +213,7 @@ scalar join__FieldSet
 scalar join__FieldValue
 
 enum join__Graph {
+  ASSISTANT @join__graph(name: "assistant", url: "http://localhost:4100")
   CARS @join__graph(name: "cars", url: "https://cars-provider.example.invalid")
   DUFFEL @join__graph(name: "duffel", url: "https://api.duffel.com")
 }
@@ -203,28 +233,12 @@ enum link__Purpose {
 }
 
 type Mutation
-  @join__type(graph: DUFFEL)
+  @join__type(graph: ASSISTANT)
 {
   """
-  Create a flight booking (order) for a selected offer. Requires a live Duffel token.
+  Sends a text/media message to the travel assistant using opaque uploaded attachment IDs.
   """
-  createFlightOrder(input: FlightOrderInput!): FlightOrder @join__directive(graphs: [DUFFEL], name: "connect", args: {source: "duffel", http: {POST: "/air/orders", body: "$({\n  data: {\n    type: $(\"instant\"),\n    selected_offers: [$args.input.offerId],\n    passengers: $args.input.passengers,\n    payments: [{\n      type: $(\"balance\"),\n      amount: $args.input.amount,\n      currency: $args.input.currency\n    }]\n  }\n})"}, selection: "$.data {\n  id\n  bookingReference: booking_reference\n  totalAmount: total_amount\n  totalCurrency: total_currency\n  createdAt: created_at\n}"})
-
-  """Create a hotel booking from a previously created quote."""
-  createStayBooking(input: StayBookingInput!): StayBooking @join__directive(graphs: [DUFFEL], name: "connect", args: {source: "duffel", http: {POST: "/stays/bookings", body: "$({\n  data: {\n    quote_id: $args.input.quoteId,\n    email: $args.input.email,\n    phone_number: $args.input.phoneNumber,\n    guests: $args.input.guests,\n    accommodation_special_requests: $args.input.specialRequests\n  }\n})"}, selection: "$.data {\n  id\n  reference: booking_reference\n  status\n  totalAmount: total_amount\n  totalCurrency: total_currency\n}"})
-}
-
-input OrderPassengerInput
-  @join__type(graph: DUFFEL)
-{
-  id: ID!
-  givenName: String!
-  familyName: String!
-  bornOn: String
-  email: String
-  phoneNumber: String
-  title: String
-  gender: String
+  sendTravelAssistantMessage(input: TravelAssistantInput!): TravelAssistantReply! @join__directive(graphs: [ASSISTANT], name: "connect", args: {source: "assistant", http: {POST: "/v1/chat", body: "$args.input {\n  conversationId\n  message\n  history { role text }\n  attachmentIds\n  bookingReference\n}"}, selection: "conversationId\nmessage\norders {\n  id\n  bookingReference\n  status\n  totalAmount\n  totalCurrency\n  createdAt\n  slices {\n    origin { iataCode cityName name }\n    destination { iataCode cityName name }\n    departingAt\n    arrivingAt\n    duration\n  }\n}\nattachments { id name mimeType kind size expiresAt }", errors: {message: "error.message"}})
 }
 
 type Photo
@@ -242,9 +256,15 @@ type Place
 }
 
 type Query
+  @join__type(graph: ASSISTANT)
   @join__type(graph: CARS)
   @join__type(graph: DUFFEL)
 {
+  """
+  Returns only flight orders mapped to the verified traveller and tenant.
+  """
+  myFlightOrders(bookingReference: String): [AssistantFlightOrder!]! @join__field(graph: ASSISTANT) @join__directive(graphs: [ASSISTANT], name: "connect", args: {source: "assistant", http: {GET: "/v1/orders", queryParams: "bookingReference: $args.bookingReference"}, selection: "$.orders {\n  id\n  bookingReference\n  status\n  totalAmount\n  totalCurrency\n  createdAt\n  slices {\n    origin { iataCode cityName name }\n    destination { iataCode cityName name }\n    departingAt\n    arrivingAt\n    duration\n  }\n}", errors: {message: "error.message"}})
+
   """
   Search rental cars. MOCK — see file header; the browser uses a client-side fallback.
   """
@@ -262,34 +282,6 @@ type Query
   Search for accommodation (hotels). Returns a list of search results with the cheapest rate.
   """
   searchStays(input: StaySearchInput!): [StayResult!]! @join__field(graph: DUFFEL) @join__directive(graphs: [DUFFEL], name: "connect", args: {source: "duffel", http: {POST: "/stays/search", body: "$({\n  data: {\n    check_in_date: $args.input.checkInDate,\n    check_out_date: $args.input.checkOutDate,\n    rooms: $args.input.rooms,\n    guests: $args.input.guests,\n    location: {\n      radius: $args.input.location.radius,\n      geographic_coordinates: {\n        latitude: $args.input.location.latitude,\n        longitude: $args.input.location.longitude\n      }\n    }\n  }\n})"}, selection: "$.data.results {\n  id\n  cheapestRateTotalAmount: cheapest_rate_total_amount\n  cheapestRateCurrency: cheapest_rate_currency\n  accommodation: accommodation {\n    id\n    name\n    rating\n    reviewScore: review_score\n    photos: photos { url }\n    location: location {\n      address: address {\n        lineOne: line_one\n        city: city_name\n        countryCode: country_code\n        postalCode: postal_code\n      }\n    }\n  }\n}"})
-}
-
-type StayBooking
-  @join__type(graph: DUFFEL)
-{
-  id: ID!
-  reference: String
-  status: String
-  totalAmount: String
-  totalCurrency: String
-}
-
-input StayBookingGuestInput
-  @join__type(graph: DUFFEL)
-{
-  givenName: String!
-  familyName: String!
-  bornOn: String
-}
-
-input StayBookingInput
-  @join__type(graph: DUFFEL)
-{
-  quoteId: ID!
-  email: String!
-  phoneNumber: String!
-  guests: [StayBookingGuestInput!]!
-  specialRequests: String
 }
 
 input StayGuestInput
@@ -335,4 +327,38 @@ input StaySearchInput
   rooms: Int!
   guests: [StayGuestInput!]!
   location: StayLocationInput!
+}
+
+input TravelAssistantHistoryInput
+  @join__type(graph: ASSISTANT)
+{
+  role: TravelAssistantRole!
+  text: String!
+}
+
+input TravelAssistantInput
+  @join__type(graph: ASSISTANT)
+{
+  conversationId: ID
+  message: String!
+  history: [TravelAssistantHistoryInput!]!
+  attachmentIds: [ID!]!
+  bookingReference: String
+}
+
+"""One user-visible assistant response."""
+type TravelAssistantReply
+  @join__type(graph: ASSISTANT)
+{
+  conversationId: ID!
+  message: String!
+  orders: [AssistantFlightOrder!]!
+  attachments: [AssistantAttachmentSummary!]!
+}
+
+enum TravelAssistantRole
+  @join__type(graph: ASSISTANT)
+{
+  USER @join__enumValue(graph: ASSISTANT)
+  ASSISTANT @join__enumValue(graph: ASSISTANT)
 }
