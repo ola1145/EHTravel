@@ -1,0 +1,22 @@
+# Apollo MCP Server config for EHTravel.
+# Exposes the composed Duffel GraphQL supergraph + saved operations as MCP tools.
+# Run the Apollo Router first (npm run router), then this server executes through it.
+transport:
+  type: stdio
+endpoint: http://localhost:4000/graphql
+schema:
+  source: local
+  path: ./graphql/supergraph.graphql
+operations:
+  source: local
+  paths:
+    - ./graphql/operations/
+introspection:
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+  execute:
+    enabled: true

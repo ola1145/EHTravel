@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ehtravel-graphql": {
+      "command": "apollo-mcp-server",
+      "args": ["graphql/apollo-mcp.yaml"],
+      "description": "Apollo MCP Server — exposes the EHTravel Duffel GraphQL operations (searchFlights, searchStays, searchCars, createFlightOrder, ...) as agent tools. Requires the Apollo Router running on :4000. Install the binary once: bash scripts/install-mcp.sh"
+    }
+  }
+}

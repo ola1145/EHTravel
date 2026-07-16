@@ -1,0 +1,15 @@
+query SearchStays($input: StaySearchInput!) {
+  searchStays(input: $input) {
+    id
+    cheapestRateTotalAmount
+    cheapestRateCurrency
+    accommodation {
+      id
+      name
+      rating
+      reviewScore
+      photos { url }
+      location { address { lineOne city countryCode postalCode } }
+    }
+  }
+}

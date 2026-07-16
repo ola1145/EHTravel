@@ -3,3 +3,14 @@
 node_modules/
 .amplify/
 .aws/
+
+# secrets
+.env
+.env.local
+
+# Duffel doc archives (extracted to docs/duffel-api/*.md) and bulky raw JSON
+*.zip
+docs/duffel-api/json/
+
+# rover / apollo local state
+.rover/

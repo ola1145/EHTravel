@@ -1,0 +1,17 @@
+query MyFlightOrders($bookingReference: String) {
+  myFlightOrders(bookingReference: $bookingReference) {
+    id
+    bookingReference
+    status
+    totalAmount
+    totalCurrency
+    createdAt
+    slices {
+      origin { iataCode cityName }
+      destination { iataCode cityName }
+      departingAt
+      arrivingAt
+      duration
+    }
+  }
+}

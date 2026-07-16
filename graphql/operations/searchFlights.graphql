@@ -1,0 +1,23 @@
+query SearchFlights($input: FlightSearchInput!) {
+  searchFlights(input: $input) {
+    id
+    totalAmount
+    totalCurrency
+    taxAmount
+    owner { name iataCode logoUrl }
+    slices {
+      duration
+      origin { iataCode cityName name }
+      destination { iataCode cityName name }
+      segments {
+        departingAt
+        arrivingAt
+        duration
+        operatingCarrier { name iataCode }
+        aircraft { name }
+        origin { iataCode }
+        destination { iataCode }
+      }
+    }
+  }
+}

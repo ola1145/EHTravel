@@ -1,0 +1,59 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$description": "EHTravel / AERIA design tokens — extracted from index.html :root and src/data.jsx. Source of truth for all UI (flights, hotels, cars). Do not introduce new palettes; reference these.",
+  "color": {
+    "ink":        { "value": "#0b1a2b", "$description": "primary dark / text on light" },
+    "ink-2":      { "value": "#14283f" },
+    "ink-3":      { "value": "#2a3f57", "$description": "muted ink / disabled" },
+    "paper":      { "value": "#f5efe4" },
+    "paper-2":    { "value": "#ece4d4" },
+    "cream":      { "value": "#fbf7ee", "$description": "primary light / text on dark, app bg" },
+    "sun":        { "value": "#e36b3a", "$description": "primary accent / CTA" },
+    "sun-deep":   { "value": "#b54a1d", "$description": "accent gradient end" },
+    "sky":        { "value": "#5a8fb8", "$description": "secondary accent — use for HOTELS mode" },
+    "grass":      { "value": "#2f5d3a", "$description": "tertiary accent — use for CARS mode" },
+    "line":       { "value": "rgba(11,26,43,.14)" },
+    "line-soft":  { "value": "rgba(11,26,43,.08)" },
+    "carrier": {
+      "aeria":     { "value": "#0b1a2b" },
+      "northvane": { "value": "#2f5d3a" },
+      "solbird":   { "value": "#b54a1d" },
+      "meridian":  { "value": "#3a5a8c" },
+      "halcyon":   { "value": "#6a4d8a" }
+    }
+  },
+  "font": {
+    "family": {
+      "serif": { "value": "\"Instrument Serif\", \"Times New Roman\", serif", "$description": "display / headlines" },
+      "sans":  { "value": "\"Geist\", system-ui, -apple-system, \"Segoe UI\", sans-serif", "$description": "body / UI" },
+      "mono":  { "value": "\"Geist Mono\", ui-monospace, \"SF Mono\", Menlo, monospace", "$description": "labels / eyebrows / codes" }
+    },
+    "weight": { "light": 300, "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
+  },
+  "radius": {
+    "field":  { "value": "18px", "$description": "search field group" },
+    "panel":  { "value": "26px", "$description": "glass search panel" },
+    "card":   { "value": "18px" },
+    "pill":   { "value": "999px" }
+  },
+  "glass": {
+    "panel-bg":     { "value": "linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06) 60%, rgba(255,255,255,.14))" },
+    "field-bg":     { "value": "linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06))" },
+    "border":       { "value": "1px solid rgba(255,255,255,.28)" },
+    "border-inner": { "value": "1px solid rgba(255,255,255,.22)" },
+    "blur":         { "value": "blur(28px) saturate(160%)" },
+    "blur-field":   { "value": "blur(18px)" }
+  },
+  "space": { "xs": "4px", "sm": "8px", "md": "12px", "lg": "18px", "xl": "24px", "2xl": "40px" },
+  "motion": {
+    "ease":       { "value": "cubic-bezier(.2,.7,.2,1)" },
+    "rise":       { "value": "rise .9s cubic-bezier(.2,.7,.2,1) both" },
+    "reduced-motion": { "value": "respected via @media (prefers-reduced-motion: reduce)" }
+  },
+  "mode": {
+    "$description": "Product mode accents for the Flights/Hotels/Cars switcher.",
+    "flights": { "accent": "{color.sun}",   "icon": "plane" },
+    "hotels":  { "accent": "{color.sky}",   "icon": "bed" },
+    "cars":    { "accent": "{color.grass}", "icon": "car" }
+  }
+}

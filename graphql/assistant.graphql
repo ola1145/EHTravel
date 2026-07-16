@@ -1,0 +1,155 @@
+# Note to AI Friends: This is an Apollo Connectors schema. The assistant service is an imperative,
+# authenticated middleware because identity, upload ownership, model orchestration, and flight-order
+# authorization must not be delegated to a model or the browser.
+
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.12")
+  @link(url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"])
+
+@source(
+  name: "assistant"
+  http: {
+    baseURL: "http://localhost:4100"
+    headers: [
+      { name: "X-Assistant-Service-Key", value: "{$config.service_key}" }
+      { name: "Authorization", from: "Authorization" }
+      { name: "X-EHTravel-Session-ID", from: "X-EHTravel-Session-ID" }
+      { name: "Content-Type", value: "application/json" }
+      { name: "Accept", value: "application/json" }
+    ]
+  }
+)
+
+type Query {
+  """Returns only flight orders mapped to the verified traveller and tenant."""
+  myFlightOrders(bookingReference: String): [AssistantFlightOrder!]!
+    @connect(
+      source: "assistant"
+      http: {
+        GET: "/v1/orders"
+        queryParams: "bookingReference: $args.bookingReference"
+      }
+      selection: """
+      $.orders {
+        id
+        bookingReference
+        status
+        totalAmount
+        totalCurrency
+        createdAt
+        slices {
+          origin { iataCode cityName name }
+          destination { iataCode cityName name }
+          departingAt
+          arrivingAt
+          duration
+        }
+      }
+      """
+      errors: { message: "error.message" }
+    )
+}
+
+type Mutation {
+  """Sends a text/media message to the travel assistant using opaque uploaded attachment IDs."""
+  sendTravelAssistantMessage(input: TravelAssistantInput!): TravelAssistantReply!
+    @connect(
+      source: "assistant"
+      http: {
+        POST: "/v1/chat"
+        body: """
+        $args.input {
+          conversationId
+          message
+          history { role text }
+          attachmentIds
+          bookingReference
+        }
+        """
+      }
+      selection: """
+      conversationId
+      message
+      orders {
+        id
+        bookingReference
+        status
+        totalAmount
+        totalCurrency
+        createdAt
+        slices {
+          origin { iataCode cityName name }
+          destination { iataCode cityName name }
+          departingAt
+          arrivingAt
+          duration
+        }
+      }
+      attachments { id name mimeType kind size expiresAt }
+      """
+      errors: { message: "error.message" }
+    )
+}
+
+"""One user-visible assistant response."""
+type TravelAssistantReply {
+  conversationId: ID!
+  message: String!
+  orders: [AssistantFlightOrder!]!
+  attachments: [AssistantAttachmentSummary!]!
+}
+
+"""A sanitized, authorization-checked projection of a flight order."""
+type AssistantFlightOrder {
+  id: ID!
+  bookingReference: String
+  status: String!
+  totalAmount: String
+  totalCurrency: String
+  createdAt: String
+  slices: [AssistantFlightSlice!]!
+}
+
+"""A route in an owned flight order."""
+type AssistantFlightSlice {
+  origin: AssistantPlace
+  destination: AssistantPlace
+  departingAt: String
+  arrivingAt: String
+  duration: String
+}
+
+"""A location in an owned flight order."""
+type AssistantPlace {
+  iataCode: String
+  cityName: String
+  name: String
+}
+
+"""Metadata for a short-lived attachment; raw bytes never traverse GraphQL."""
+type AssistantAttachmentSummary {
+  id: ID!
+  name: String!
+  mimeType: String!
+  kind: String!
+  size: Int!
+  expiresAt: String!
+}
+
+input TravelAssistantInput {
+  conversationId: ID
+  message: String!
+  history: [TravelAssistantHistoryInput!]!
+  attachmentIds: [ID!]!
+  bookingReference: String
+}
+
+input TravelAssistantHistoryInput {
+  role: TravelAssistantRole!
+  text: String!
+}
+
+enum TravelAssistantRole {
+  USER
+  ASSISTANT
+}

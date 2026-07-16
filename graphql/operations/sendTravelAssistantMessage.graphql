@@ -1,0 +1,22 @@
+mutation SendTravelAssistantMessage($input: TravelAssistantInput!) {
+  sendTravelAssistantMessage(input: $input) {
+    conversationId
+    message
+    orders {
+      id
+      bookingReference
+      status
+      totalAmount
+      totalCurrency
+      createdAt
+      slices {
+        origin { iataCode cityName }
+        destination { iataCode cityName }
+        departingAt
+        arrivingAt
+        duration
+      }
+    }
+    attachments { id name mimeType kind size expiresAt }
+  }
+}

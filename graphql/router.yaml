@@ -1,0 +1,52 @@
+# Apollo Router config for EHTravel.
+# The Duffel token is read from the process env ($env.DUFFEL_API_TOKEN) by the connector;
+# it is never sent to the browser. Run: npm run router  (rover dev), or the router binary.
+# Listen on Railway's injected $PORT in the cloud; default to 4000 for local dev.
+supergraph:
+  listen: 0.0.0.0:${env.PORT:-4000}
+  path: /graphql
+
+health_check:
+  enabled: true
+  path: /health
+
+# Exact browser origins are required before forwarding identity-bearing requests to the
+# assistant middleware. Public travel search remains available from these same front ends.
+cors:
+  policies:
+    - origins:
+        - http://localhost:3000
+        - https://web-production-11001.up.railway.app
+        - https://www.ehtravel.org
+  allow_headers:
+    - content-type
+    - authorization
+    - x-ehtravel-session-id
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+
+# Upstream connector details can contain provider internals and are not exposed to clients.
+include_subgraph_errors:
+  all: false
+
+limits:
+  router:
+    http_max_request_bytes: 1000000
+    parser_max_tokens: 5000
+    parser_max_recursion: 100
+  connector:
+    all:
+      http_max_response_size: 5MiB
+
+connectors:
+  # Never expose connector request/response details (which may contain provider data) to clients.
+  debug_extensions: false
+  max_requests_per_operation_per_source: 10
+  sources:
+    assistant.assistant:
+      override_url: "${env.ASSISTANT_SERVICE_URL:-http://localhost:4100}"
+      max_requests_per_operation: 2
+      $config:
+        service_key: "${env.ASSISTANT_SERVICE_KEY:-ehtravel-local-service-key}"

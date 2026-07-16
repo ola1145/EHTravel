@@ -93,15 +93,15 @@ function TopNav({ stage, goto, onReset }) {
         <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, border: "1px solid currentColor", borderRadius: 999 }}>
           <Icon.plane size={14} />
         </span>
-        <span className="serif" style={{ fontSize: 24, lineHeight: 1, letterSpacing: ".02em" }}>aeria</span>
+        <span className="serif" style={{ fontSize: 24, lineHeight: 1, letterSpacing: ".02em" }}>EHTravel</span>
       </button>
       <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 28, fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", opacity: .8 }}>
-        <a style={{ color: "inherit", textDecoration: "none" }}>Discover</a>
-        <a style={{ color: "inherit", textDecoration: "none" }}>Loyalty</a>
-        <a style={{ color: "inherit", textDecoration: "none" }}>Help</a>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", border: "1px solid currentColor", borderRadius: 999 }}>
-          <Icon.user size={14} /> Iris W.
-        </span>
+        <a href="#" style={{ color: "inherit", textDecoration: "none", cursor: "pointer" }} onClick={(e) => e.preventDefault()}>Discover</a>
+        <a href="#" style={{ color: "inherit", textDecoration: "none", cursor: "pointer" }} onClick={(e) => e.preventDefault()}>Loyalty</a>
+        <a href="#" style={{ color: "inherit", textDecoration: "none", cursor: "pointer" }} onClick={(e) => e.preventDefault()}>Help</a>
+        <button style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", border: "1px solid currentColor", borderRadius: 999, background: "transparent", color: "inherit", cursor: "pointer", fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" }}>
+          <span style={{ width: 22, height: 22, borderRadius: 999, background: "var(--sun)", color: "var(--cream)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600 }}>IW</span> Account
+        </button>
       </div>
     </nav>
   );

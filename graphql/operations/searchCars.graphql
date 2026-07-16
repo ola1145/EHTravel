@@ -1,0 +1,16 @@
+query SearchCars($input: CarSearchInput!) {
+  searchCars(input: $input) {
+    id
+    vendor
+    vehicleClass
+    vehicleName
+    transmission
+    seats
+    bags
+    imageUrl
+    totalAmount
+    currency
+    pickupLocation
+    dropoffLocation
+  }
+}
