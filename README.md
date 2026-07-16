@@ -32,7 +32,7 @@ always demoable and goes live automatically when the router + token are present.
 |------|---------|
 | `index.html`, `src/*.jsx` | No-build React UI (React 18 + Babel standalone via CDN). Flight flow is finished; hotels/cars added additively. |
 | `src/api.jsx` | `EHT_API` — GraphQL client with graceful mock fallback + Duffel→UI mappers. |
-| `src/floating-chat.{jsx,css}` | Persistent text, file, recorded voice, and recorded video assistant UI. |
+| `src/auth.jsx`, `src/floating-chat.{jsx,css}` | Clerk sign-in plus persistent text, file, recorded voice, and recorded video assistant UI. |
 | `src/search-shared.jsx`, `src/screen-search-{hotels,cars}.jsx` | Additive hotel/car search panels + overlays. |
 | `graphql/duffel.graphql` | Apollo Connectors SDL: flights (offer requests → offers → orders) + stays. |
 | `graphql/cars.graphql` | Cars subgraph — **mock** (Duffel has no cars API; provider-ready contract). |
@@ -67,6 +67,7 @@ because they could spend the shared provider balance without authenticating a tr
 
 - The Duffel token lives only in the router env (`$env.DUFFEL_API_TOKEN`) — never in the browser.
 - Cars are mock until a real car-rental provider is wired into `graphql/cars.graphql`.
-- Order queries never accept a guessed order ID as authorization. A verified JWT subject must be
-  mapped to the order through `ORDER_ACCESS_JSON` (development) or the production ownership store.
+- Order queries never accept a guessed order ID as authorization. Production verifies the Clerk
+  session and reads the customer's owned order IDs/references from Clerk private metadata;
+  `ORDER_ACCESS_JSON` remains a local-development fallback.
 - Deploy: **Railway** — `web`, `router`, and `assistant` services. See `docs/DEPLOYMENT.md`.

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { generateKeyPairSync, sign as signSignature } from "node:crypto";
 import { once } from "node:events";
 import { test } from "node:test";
 import { signToken, verifyToken, identityFromHeaders, AuthError } from "./auth.mjs";
@@ -15,6 +16,13 @@ function config(overrides = {}) {
     authSecret: "test-auth-secret-with-enough-entropy",
     authIssuer: "https://identity.test/",
     authAudience: "ehtravel-test",
+    clerkSecretKey: "",
+    clerkPublishableKey: "",
+    clerkIssuer: "",
+    clerkAudience: "",
+    clerkAuthorizedParties: ["https://app.test"],
+    clerkApiUrl: "https://api.clerk.test",
+    clerkUserCacheMs: 60_000,
     allowedOrigins: ["https://app.test"],
     allowAnonymous: true,
     maxFileBytes: 10 * MiB,
@@ -63,11 +71,64 @@ test("JWT verification rejects tampering, expiry, and wrong audience", () => {
   assert.throws(() => verifyToken(tokenFor("user-a", "tenant-a", { aud: "other" }), cfg), /audience/);
 });
 
-test("anonymous identities require an unpredictable browser session identifier", () => {
+test("anonymous identities require an unpredictable browser session identifier", async () => {
   const cfg = config();
-  assert.throws(() => identityFromHeaders({}, cfg), /browser session/);
-  const identity = identityFromHeaders({ "x-ehtravel-session-id": "browser_session_123456789" }, cfg);
+  await assert.rejects(() => identityFromHeaders({}, cfg), /browser session/);
+  const identity = await identityFromHeaders({ "x-ehtravel-session-id": "browser_session_123456789" }, cfg);
   assert.equal(identity.anonymous, true);
+});
+
+test("Clerk tokens require an authorized application and load ownership from private metadata", async () => {
+  const { publicKey, privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const kid = `test-key-${Date.now()}`;
+  const jwk = { ...publicKey.export({ format: "jwk" }), kid, use: "sig", alg: "RS256" };
+  const now = Math.floor(Date.now() / 1000);
+  const token = (azp) => {
+    const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT", kid })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({
+      sub: `user_${kid}`,
+      iss: "https://clerk.test",
+      azp,
+      iat: now,
+      exp: now + 3600,
+    })).toString("base64url");
+    const signature = signSignature("RSA-SHA256", Buffer.from(`${header}.${payload}`), privateKey).toString("base64url");
+    return `${header}.${payload}.${signature}`;
+  };
+  const calls = [];
+  const fakeFetch = async (url) => {
+    calls.push(String(url));
+    if (String(url).endsWith("/v1/jwks")) return { ok: true, json: async () => ({ keys: [jwk] }) };
+    return {
+      ok: true,
+      json: async () => ({
+        private_metadata: { ehtravel: { orderIds: ["ord_owned"], bookingReferences: ["abc123"] } },
+      }),
+    };
+  };
+  const cfg = config({
+    clerkSecretKey: "sk_live_test",
+    clerkIssuer: "https://clerk.test",
+    clerkAuthorizedParties: ["https://app.test"],
+  });
+
+  const identity = await identityFromHeaders(
+    { authorization: `Bearer ${token("https://app.test")}` },
+    cfg,
+    { requireUser: true, fetchImpl: fakeFetch },
+  );
+  assert.equal(identity.sub, `user_${kid}`);
+  assert.deepEqual(identity.claims.order_ids, ["ord_owned"]);
+  assert.deepEqual(identity.claims.booking_references, ["ABC123"]);
+  assert.equal(calls.some((url) => url.includes(`/v1/users/user_${kid}`)), true);
+  await assert.rejects(
+    () => identityFromHeaders(
+      { authorization: `Bearer ${token("https://evil.test")}` },
+      cfg,
+      { requireUser: true, fetchImpl: fakeFetch },
+    ),
+    /unauthorized application/,
+  );
 });
 
 test("attachments enforce signatures, active-content rejection, size, and ownership", () => {
@@ -97,7 +158,7 @@ test("order service never calls Duffel until the requested order is owned", asyn
     return { ok: true, json: async () => ({ data: String(url).includes("booking_reference") ? [order] : order }) };
   };
   const service = new OrderService(cfg, fakeFetch);
-  const identity = identityFromHeaders({ authorization: `Bearer ${tokenFor("user-a")}` }, cfg, { requireUser: true });
+  const identity = await identityFromHeaders({ authorization: `Bearer ${tokenFor("user-a")}` }, cfg, { requireUser: true });
 
   assert.deepEqual(await service.list(identity, "FOREIGN999"), []);
   assert.equal(calls.length, 0, "foreign reference must not trigger a provider lookup");
@@ -113,7 +174,7 @@ test("an order-ID ownership mapping can resolve its booking reference without tr
     calls.push(String(url));
     return { ok: true, json: async () => ({ data: { id: "ord_owned", booking_reference: "ABC123", status: "confirmed", slices: [] } }) };
   });
-  const identity = identityFromHeaders({ authorization: `Bearer ${tokenFor("user-a")}` }, cfg, { requireUser: true });
+  const identity = await identityFromHeaders({ authorization: `Bearer ${tokenFor("user-a")}` }, cfg, { requireUser: true });
   assert.equal((await service.list(identity, "ABC123"))[0].id, "ord_owned");
   assert.equal(calls[0].endsWith("/air/orders/ord_owned"), true);
   assert.deepEqual(await service.list(identity, "NOTMINE"), []);

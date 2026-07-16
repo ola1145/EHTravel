@@ -11,4 +11,9 @@ if [ -n "$ASSISTANT_UPLOAD_ENDPOINT" ]; then
   sed -i "s|content=\"http://localhost:4100/v1/uploads\"|content=\"$escaped_assistant_endpoint\"|" /srv/index.html
   echo "web: assistant-upload-endpoint configured"
 fi
+if [ -n "$CLERK_PUBLISHABLE_KEY" ]; then
+  escaped_clerk_key=$(printf '%s' "$CLERK_PUBLISHABLE_KEY" | sed 's/[&|]/\\&/g')
+  sed -i "s|name=\"clerk-publishable-key\" content=\"\"|name=\"clerk-publishable-key\" content=\"$escaped_clerk_key\"|" /srv/index.html
+  echo "web: Clerk authentication configured"
+fi
 exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

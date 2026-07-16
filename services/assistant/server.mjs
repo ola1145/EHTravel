@@ -124,7 +124,7 @@ export function createAssistantServer(options = {}) {
       }
 
       if (req.method === "POST" && url.pathname === "/v1/uploads") {
-        const identity = identityFromHeaders(req.headers, config);
+        const identity = await identityFromHeaders(req.headers, config, { fetchImpl: options.fetchImpl || fetch });
         limiter.check(`${identity.key}:uploads`);
         const body = await readBody(req, config.maxRequestBytes);
         const files = await filesFromMultipart(body, req.headers["content-type"], config);
@@ -140,7 +140,7 @@ export function createAssistantServer(options = {}) {
 
       if (req.method === "GET" && url.pathname === "/v1/orders") {
         requireServiceKey(req.headers, config);
-        const identity = identityFromHeaders(req.headers, config, { requireUser: true });
+        const identity = await identityFromHeaders(req.headers, config, { requireUser: true, fetchImpl: options.fetchImpl || fetch });
         limiter.check(`${identity.key}:orders`);
         const result = await orders.list(identity, url.searchParams.get("bookingReference") || "");
         return sendJson(res, 200, { orders: result }, cors);
@@ -148,7 +148,7 @@ export function createAssistantServer(options = {}) {
 
       if (req.method === "POST" && url.pathname === "/v1/chat") {
         requireServiceKey(req.headers, config);
-        const identity = identityFromHeaders(req.headers, config);
+        const identity = await identityFromHeaders(req.headers, config, { fetchImpl: options.fetchImpl || fetch });
         limiter.check(`${identity.key}:chat`);
         const input = validateChatInput(parseJson(await readBody(req, Math.min(config.maxRequestBytes, 1_000_000))), config);
         const ownedAttachments = attachments.getOwned(identity, input.attachmentIds);

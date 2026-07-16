@@ -37,7 +37,7 @@ if (r.error && r.error.code === "ENOENT") {
 
 console.log("Front-end wiring:");
 const html = existsSync(join(root, "index.html")) ? readFileSync(join(root, "index.html"), "utf8") : "";
-for (const s of ["src/api.jsx", "src/search-shared.jsx", "src/screen-search-hotels.jsx", "src/screen-search-cars.jsx", "src/floating-chat.jsx", "src/floating-chat.css"]) {
+for (const s of ["src/auth.jsx", "src/api.jsx", "src/search-shared.jsx", "src/screen-search-hotels.jsx", "src/screen-search-cars.jsx", "src/floating-chat.jsx", "src/floating-chat.css"]) {
   html.includes(s) ? ok(`index.html loads ${s}`) : bad(`index.html does not load ${s}`);
 }
 const api = existsSync(join(root, "src/api.jsx")) ? readFileSync(join(root, "src/api.jsx"), "utf8") : "";
@@ -49,6 +49,12 @@ for (const behavior of ["getUserMedia", "MediaRecorder", "track.stop()", "URL.re
   assistantUi.includes(behavior) ? ok(`assistant implements ${behavior}`) : bad(`assistant missing ${behavior}`);
 }
 api.includes("FormData") ? ok("assistant uploads use multipart FormData") : bad("assistant upload is not multipart");
+const authUi = readFileSync(join(root, "src/auth.jsx"), "utf8");
+authUi.includes("EHT_GET_AUTH_TOKEN") && authUi.includes("getToken()") && authUi.includes("mountSignIn")
+  ? ok("Clerk supplies short-lived session tokens and sign-in UI") : bad("Clerk browser authentication is incomplete");
+const assistantAuth = readFileSync(join(root, "services/assistant/auth.mjs"), "utf8");
+assistantAuth.includes("verifyClerkToken") && assistantAuth.includes("private_metadata") && assistantAuth.includes("clerkAuthorizedParties")
+  ? ok("assistant verifies Clerk tokens and reads private ownership metadata") : bad("assistant Clerk verification is incomplete");
 
 const duffelSchema = readFileSync(join(root, "graphql/duffel.graphql"), "utf8");
 !duffelSchema.includes("createFlightOrder(input:") ? ok("public flight-order write is removed") : bad("public flight-order write remains");

@@ -1,4 +1,5 @@
 // Persistent floating multimodal assistant. Mounted once outside the booking stage container.
+const EHTClerkAuthControl = window.ClerkAuthControl || (() => null);
 const FloatingTravelAssistant = () => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -266,6 +267,7 @@ const FloatingTravelAssistant = () => {
               <div id="eht-assistant-title" className="eht-assistant-title serif">Travel assistant</div>
               <div className="eht-assistant-subtitle"><span className="eht-live-dot"/> Secure multimodal help</div>
             </div>
+            <EHTClerkAuthControl />
             <button className="eht-icon-button" onClick={closePanel} aria-label="Minimize travel assistant">×</button>
           </header>
 
